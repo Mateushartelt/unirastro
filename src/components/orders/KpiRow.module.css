@@ -1,0 +1,44 @@
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.card {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  animation: fadeUp 0.4s ease both;
+}
+
+.label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.value {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.neutral {
+  color: var(--ink);
+}
+
+.warning {
+  color: var(--orange);
+}
+
+.danger {
+  color: var(--red);
+}
+
+.success {
+  color: var(--green);
+}

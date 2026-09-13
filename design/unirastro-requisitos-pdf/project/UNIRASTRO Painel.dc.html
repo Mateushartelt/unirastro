@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#EEEBE3;color:#141A26;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0F2A4A}a:hover{color:#E8621A}
+input,select,button{font-family:inherit}
+input:focus,select:focus{outline:2px solid #E8621A;outline-offset:1px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;background:#EEEBE3">
+  <!-- Sidebar -->
+  <aside style="width:232px;flex:0 0 232px;background:#0F2A4A;color:#EEEBE3;display:flex;flex-direction:column;padding:24px 16px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px 24px;border-bottom:1px solid rgba(238,235,227,.14)">
+      <div style="width:32px;height:32px;background:#E8621A;display:grid;place-items:center;font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:#141A26">U</div>
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em">UNIRASTRO</div>
+        <div style="font-size:11px;color:rgba(238,235,227,.6);letter-spacing:.06em;text-transform:uppercase">Painel operacional</div>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:4px;padding-top:16px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
+        <button onClick="{{ n.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:0;cursor:pointer;padding:10px 12px;font-size:14px;font-weight:500;color:{{ n.color }};background:{{ n.bg }};border-left:3px solid {{ n.border }}" style-hover="background:rgba(238,235,227,.1)">
+          <span>{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;background:#E8621A;color:#141A26;padding:1px 7px;border-radius:999px">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto;padding:14px 12px;background:rgba(238,235,227,.06);font-size:12px;line-height:1.5">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="width:8px;height:8px;border-radius:50%;background:#4CC38A;display:inline-block;animation:pulse 2s infinite"></span><span style="font-weight:600">Workers ativos</span></div>
+      <div style="color:rgba(238,235,227,.7)">Última consulta às APIs: {{ lastSync }}</div>
+      <div style="color:rgba(238,235,227,.7)">Fila: {{ queueSize }} eventos pendentes</div>
+    </div>
+    <div style="padding:14px 12px 0;font-size:12px;color:rgba(238,235,227,.7);display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:50%;background:#E8621A;color:#141A26;display:grid;place-items:center;font-weight:600;font-size:12px">MA</div>
+      <div><div style="color:#EEEBE3;font-weight:500">Marina Alves</div><div>Operadora de Logística</div></div>
+    </div>
+  </aside>
+
+  <main style="flex:1;min-width:0;padding:32px 40px 56px">
+    <!-- ====== ENCOMENDAS ====== -->
+    <sc-if value="{{ isOrders }}" hint-placeholder-val="{{ true }}">
+      <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:24px;animation:fadeUp .4s ease both">
+        <div>
+          <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5A6273;font-weight:600">Gestão de encomendas</div>
+          <h1 style="font-family:'Sora',sans-serif;font-weight:600;font-size:32px;margin:6px 0 0;letter-spacing:-.02em">Encomendas em trânsito</h1>
+        </div>
+        <button onClick="{{ openNew }}" style="background:#E8621A;color:#141A26;border:0;padding:12px 18px;font-weight:600;font-size:14px;cursor:pointer;display:flex;gap:8px;align-items:center" style-hover="background:#F27A38">+ Cadastrar pedido</button>
+      </header>
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="background:#FBFAF6;border:1px solid #D9D4C7;padding:16px 18px;animation:fadeUp .4s ease both">
+            <div style="font-size:12px;color:#5A6273;font-weight:500">{{ k.label }}</div>
+            <div style="font-family:'Sora',sans-serif;font-size:28px;font-weight:600;margin-top:4px;color:{{ k.color }}">{{ k.value }}</div>
+          </div>
+        </sc-for>
+      </section>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <input value="{{ query }}" onChange="{{ setQuery }}" placeholder="Buscar por código, destinatário ou cidade" style="flex:1;min-width:240px;padding:10px 14px;border:1px solid #D9D4C7;background:#FBFAF6;font-size:14px;font-family:'IBM Plex Mono',monospace">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.go }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#141A26">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#FBFAF6;border:1px solid #D9D4C7;overflow-x:auto">
+        <div style="display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(110px,.8fr) minmax(160px,1.3fr) minmax(120px,1fr) minmax(110px,.8fr) minmax(90px,.6fr);gap:12px;padding:10px 18px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5A6273;font-weight:600;border-bottom:1px solid #D9D4C7">
+          <span>Código</span><span>Transportadora</span><span>Destinatário</span><span>Status</span><span>Prazo</span><span>Última mov.</span>
+        </div>
+        <sc-for list="{{ orders }}" as="o" hint-placeholder-count="6">
+          <div onClick="{{ o.open }}" style="display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(110px,.8fr) minmax(160px,1.3fr) minmax(120px,1fr) minmax(110px,.8fr) minmax(90px,.6fr);gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid #E7E2D6;cursor:pointer;background:{{ o.rowBg }}" style-hover="background:#F1EDE2">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <sc-if value="{{ o.anomaly }}" hint-placeholder-val="{{ false }}"><span title="Anomalia detectada" style="width:8px;height:8px;border-radius:50%;background:#E8621A;flex:0 0 auto"></span></sc-if>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.code }}</span>
+            </div>
+            <span style="font-size:13px;font-weight:500">{{ o.carrier }}</span>
+            <div style="min-width:0"><div style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.recipient }}</div><div style="font-size:12px;color:#5A6273">{{ o.city }}</div></div>
+            <span style="display:inline-flex;align-self:start;font-size:12px;font-weight:600;padding:3px 9px;background:{{ o.statusBg }};color:{{ o.statusColor }}">{{ o.status }}</span>
+            <span style="font-size:13px;color:{{ o.dueColor }};font-weight:500">{{ o.due }}</span>
+            <span style="font-size:12px;color:#5A6273">{{ o.lastMove }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noOrders }}" hint-placeholder-val="{{ false }}"><div style="padding:32px;text-align:center;color:#5A6273;font-size:14px">Nenhuma encomenda corresponde ao filtro.</div></sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ====== ALERTAS ====== -->
+    <sc-if value="{{ isAlerts }}" hint-placeholder-val="{{ false }}">
+      <header style="margin-bottom:24px;animation:fadeUp .4s ease both">
+        <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5A6273;font-weight:600">Alertas proativos</div>
+        <h1 style="font-family:'Sora',sans-serif;font-weight:600;font-size:32px;margin:6px 0 0;letter-spacing:-.02em">Central de incidentes</h1>
+      </header>
+      <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:24px">
+        <section>
+          <div style="display:flex;gap:6px;margin-bottom:12px">
+            <sc-for list="{{ sevChips }}" as="c" hint-placeholder-count="3">
+              <button onClick="{{ c.go }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ incidents }}" as="i" hint-placeholder-count="4">
+              <article style="background:#FBFAF6;border:1px solid #D9D4C7;padding:16px 18px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start;opacity:{{ i.opacity }};animation:fadeUp .4s ease both">
+                <div style="width:10px;height:10px;border-radius:50%;margin-top:6px;background:{{ i.dot }}"></div>
+                <div style="min-width:0">
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:{{ i.dot }}">{{ i.severity }}</span>
+                    <span style="font-size:12px;color:#5A6273">{{ i.rule }}</span>
+                  </div>
+                  <div style="font-weight:600;font-size:15px;margin-top:4px">{{ i.title }}</div>
+                  <div style="font-size:13px;color:#3A4152;margin-top:4px;line-height:1.5;text-wrap:pretty">{{ i.desc }}</div>
+                  <div style="display:flex;gap:14px;margin-top:10px;font-size:12px;color:#5A6273;flex-wrap:wrap">
+                    <a href="#" onClick="{{ i.openOrder }}" style="font-family:'IBM Plex Mono',monospace;font-weight:500">{{ i.code }}</a>
+                    <span>{{ i.carrier }}</span><span>{{ i.when }}</span>
+                    <sc-if value="{{ i.notified }}" hint-placeholder-val="{{ false }}"><span style="color:#1F7A4D;font-weight:500">✓ Cliente final notificado</span></sc-if>
+                  </div>
+                </div>
+                <sc-if value="{{ i.isOpen }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ i.resolve }}" style="border:1px solid #141A26;background:transparent;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:#141A26;color:#EEEBE3">Resolver</button>
+                </sc-if>
+                <sc-if value="{{ i.isResolved }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:12px;color:#1F7A4D;font-weight:600;white-space:nowrap">Resolvido</span>
+                </sc-if>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+        <aside style="background:#FBFAF6;border:1px solid #D9D4C7;padding:20px;align-self:start;position:sticky;top:32px">
+          <div style="font-family:'Sora',sans-serif;font-weight:600;font-size:16px">Gatilhos de notificação</div>
+          <div style="font-size:13px;color:#5A6273;margin:4px 0 16px;line-height:1.5">Eventos que disparam alerta automático ao cliente final.</div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ triggers }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #E7E2D6">
+                <div><div style="font-size:14px;font-weight:500">{{ t.label }}</div><div style="font-size:12px;color:#5A6273;margin-top:2px">{{ t.hint }}</div></div>
+                <button onClick="{{ t.toggle }}" aria-label="Alternar" style="width:40px;height:22px;border-radius:999px;border:0;cursor:pointer;position:relative;flex:0 0 auto;background:{{ t.bg }};transition:background .2s">
+                  <span style="position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#FBFAF6;transition:left .2s;left:{{ t.knob }}"></span>
+                </button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:#0F2A4A;color:#EEEBE3;font-size:12px;line-height:1.5">
+            <span style="font-weight:600">{{ activeTriggers }}</span> gatilhos ativos · canais: e-mail e WhatsApp
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <!-- ====== DASHBOARD ====== -->
+    <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+      <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:24px;animation:fadeUp .4s ease both">
+        <div>
+          <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5A6273;font-weight:600">Relatórios e insights</div>
+          <h1 style="font-family:'Sora',sans-serif;font-weight:600;font-size:32px;margin:6px 0 0;letter-spacing:-.02em">Desempenho por transportadora</h1>
+        </div>
+        <button onClick="{{ exportCsv }}" style="background:transparent;border:1px solid #141A26;padding:11px 16px;font-weight:600;font-size:13px;cursor:pointer" style-hover="background:#141A26;color:#EEEBE3">{{ exportLabel }}</button>
+      </header>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+        <select value="{{ period }}" onChange="{{ setPeriod }}" style="padding:10px 12px;border:1px solid #D9D4C7;background:#FBFAF6;font-size:13px">
+          <option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option>
+        </select>
+        <select value="{{ region }}" onChange="{{ setRegion }}" style="padding:10px 12px;border:1px solid #D9D4C7;background:#FBFAF6;font-size:13px">
+          <option value="all">Todas as regiões</option><option value="Sudeste">Sudeste</option><option value="Sul">Sul</option><option value="Nordeste">Nordeste</option><option value="Norte">Norte</option><option value="Centro-Oeste">Centro-Oeste</option>
+        </select>
+        <select value="{{ carrierF }}" onChange="{{ setCarrierF }}" style="padding:10px 12px;border:1px solid #D9D4C7;background:#FBFAF6;font-size:13px">
+          <option value="all">Todas as transportadoras</option><option>Correios</option><option>Jadlog</option><option>Loggi</option><option>Total Express</option>
+        </select>
+        <div style="align-self:center;font-size:12px;color:#5A6273">{{ dashScope }}</div>
+      </div>
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:16px">
+        <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="3">
+          <div style="background:#FBFAF6;border:1px solid #D9D4C7;padding:18px 20px;animation:fadeUp .4s ease both">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">{{ m.title }}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="4">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#3A4152">{{ r.name }}</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:500">{{ r.text }}</span></div>
+                  <div style="height:8px;background:#E7E2D6"><div style="height:8px;background:{{ r.color }};width:{{ r.pct }}%;transition:width .5s ease"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+
+      <div style="background:#FBFAF6;border:1px solid #D9D4C7;overflow-x:auto">
+        <div style="display:grid;grid-template-columns:1.2fr repeat(5,1fr);gap:12px;padding:10px 18px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5A6273;font-weight:600;border-bottom:1px solid #D9D4C7;min-width:720px">
+          <span>Transportadora</span><span>Volume</span><span>Trânsito médio</span><span>Pontualidade</span><span>Sinistros</span><span>Reentrega</span>
+        </div>
+        <sc-for list="{{ carrierRows }}" as="c" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:1.2fr repeat(5,1fr);gap:12px;padding:14px 18px;border-bottom:1px solid #E7E2D6;font-size:14px;align-items:center;min-width:720px">
+            <span style="font-weight:600">{{ c.name }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace">{{ c.volume }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace">{{ c.transit }} dias</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:{{ c.onTimeColor }};font-weight:500">{{ c.onTime }}%</span>
+            <span style="font-family:'IBM Plex Mono',monospace">{{ c.loss }}%</span>
+            <span style="font-family:'IBM Plex Mono',monospace">{{ c.redeliver }}%</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ====== DRAWER: detalhe da encomenda ====== -->
+  <sc-if value="{{ hasSelected }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDetail }}" style="position:fixed;inset:0;background:rgba(15,42,74,.35);z-index:20"></div>
+    <aside style="position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:#FBFAF6;z-index:21;overflow-y:auto;padding:28px 28px 40px;box-shadow:-12px 0 40px rgba(15,42,74,.25);animation:slideIn .3s ease both">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <div style="font-size:12px;color:#5A6273;font-weight:500">{{ sel.carrier }} · detectada automaticamente</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;margin-top:4px">{{ sel.code }}</div>
+        </div>
+        <button onClick="{{ closeDetail }}" aria-label="Fechar" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#5A6273">×</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;font-size:13px">
+        <div style="background:#EEEBE3;padding:12px"><div style="color:#5A6273;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Destinatário</div><div style="font-weight:500;margin-top:3px">{{ sel.recipient }}</div><div style="color:#5A6273">{{ sel.city }}</div></div>
+        <div style="background:#EEEBE3;padding:12px"><div style="color:#5A6273;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Prazo</div><div style="font-weight:500;margin-top:3px;color:{{ sel.dueColor }}">{{ sel.due }}</div><div style="color:#5A6273">Status: {{ sel.status }}</div></div>
+      </div>
+      <sc-if value="{{ sel.anomaly }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid #E8621A;background:#FCEDE3;padding:14px;margin-bottom:20px;font-size:13px;line-height:1.5">
+          <div style="font-weight:600;color:#9A3D0B;margin-bottom:2px">Anomalia detectada · RF04</div>{{ sel.anomalyText }}
+        </div>
+      </sc-if>
+      <div style="font-family:'Sora',sans-serif;font-weight:600;font-size:15px;margin-bottom:12px">Histórico unificado</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ sel.timeline }}" as="e" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:12px">
+            <div style="display:flex;flex-direction:column;align-items:center"><span style="width:10px;height:10px;border-radius:50%;margin-top:4px;background:{{ e.dot }};flex:0 0 auto"></span><span style="width:2px;flex:1;background:{{ e.line }}"></span></div>
+            <div style="padding-bottom:18px"><div style="font-size:14px;font-weight:500">{{ e.title }}</div><div style="font-size:12px;color:#5A6273;margin-top:2px">{{ e.place }} · {{ e.when }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </sc-if>
+
+  <!-- ====== MODAL: cadastro de pedido ====== -->
+  <sc-if value="{{ showNew }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeNew }}" style="position:fixed;inset:0;background:rgba(15,42,74,.45);z-index:30;display:grid;place-items:center;padding:20px">
+      <form onClick="{{ stop }}" onSubmit="{{ submitNew }}" style="background:#FBFAF6;width:min(520px,100%);padding:28px;box-shadow:0 24px 60px rgba(15,42,74,.35);animation:fadeUp .3s ease both">
+        <div style="font-family:'Sora',sans-serif;font-weight:600;font-size:20px">Cadastrar pedido</div>
+        <div style="font-size:13px;color:#5A6273;margin:4px 0 20px;line-height:1.5">Informe o código de rastreio — a transportadora é identificada automaticamente.</div>
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Código de rastreio</label>
+        <input value="{{ newCode }}" onChange="{{ setNewCode }}" placeholder="ex: NL123456789BR" autoFocus="{{ true }}" style="width:100%;padding:12px 14px;border:1px solid #D9D4C7;background:#fff;font-size:15px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase">
+        <div style="display:flex;align-items:center;gap:8px;margin:10px 0 18px;font-size:13px;min-height:20px">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ detectDot }}"></span><span style="color:{{ detectColor }};font-weight:500">{{ detectText }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Destinatário</label><input value="{{ newName }}" onChange="{{ setNewName }}" placeholder="Nome completo" style="width:100%;padding:11px 14px;border:1px solid #D9D4C7;background:#fff;font-size:14px"></div>
+          <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Cidade / UF</label><input value="{{ newCity }}" onChange="{{ setNewCity }}" placeholder="São Paulo, SP" style="width:100%;padding:11px 14px;border:1px solid #D9D4C7;background:#fff;font-size:14px"></div>
+        </div>
+        <sc-if value="{{ newError }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;font-size:13px;color:#B3261E;font-weight:500">{{ newError }}</div></sc-if>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px">
+          <button type="button" onClick="{{ closeNew }}" style="border:1px solid #D9D4C7;background:transparent;padding:11px 16px;font-size:14px;font-weight:500;cursor:pointer">Cancelar</button>
+          <button type="submit" style="border:0;background:#E8621A;color:#141A26;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#F27A38">Salvar e rastrear</button>
+        </div>
+      </form>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#141A26;color:#EEEBE3;padding:12px 18px;font-size:13px;font-weight:500;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:fadeUp .3s ease both">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;orders&quot;,&quot;alerts&quot;,&quot;dash&quot;],&quot;default&quot;:&quot;orders&quot;,&quot;tsType&quot;:&quot;'orders'|'alerts'|'dash'&quot;,&quot;section&quot;:&quot;Navegação&quot;}}">
+const CARRIERS = {
+  Correios: { re: /^[A-Z]{2}\d{9}[A-Z]{2}$/, hint: 'Formato AA000000000BR' },
+  Jadlog: { re: /^\d{14}$/, hint: '14 dígitos' },
+  Loggi: { re: /^LG\d{10}$/, hint: 'Prefixo LG + 10 dígitos' },
+  'Total Express': { re: /^TE\d{12}$/, hint: 'Prefixo TE + 12 dígitos' },
+};
+const STATUS = {
+  'Em trânsito': ['#DDE8F5', '#0F2A4A'],
+  'Saiu p/ entrega': ['#DFF3E8', '#1F7A4D'],
+  'Parado': ['#FCEDE3', '#9A3D0B'],
+  'Entrega frustrada': ['#F9DEDC', '#B3261E'],
+  'Entregue': ['#E7E2D6', '#3A4152'],
+  'Postado': ['#EEEBE3', '#5A6273'],
+};
+const tl = (title, place, when) => ({ title, place, when });
+const ORDERS = [
+  { code: 'NL482913776BR', carrier: 'Correios', recipient: 'Beatriz Nogueira', city: 'Belo Horizonte, MG', region: 'Sudeste', status: 'Parado', due: 'Vence em 1 dia', dueLevel: 2, lastMove: 'há 52h', anomaly: true,
+    anomalyText: 'Pacote na unidade de tratamento de Contagem há 52h — 3,2× acima da média histórica dessa filial. Risco de atraso previsto para o prazo final.',
+    timeline: [tl('Objeto em trânsito — unidade de tratamento', 'Contagem, MG', '11 set · 06:14'), tl('Objeto encaminhado', 'São Paulo, SP', '10 set · 21:40'), tl('Objeto postado', 'São Paulo, SP', '09 set · 17:03')] },
+  { code: '10084531275940', carrier: 'Jadlog', recipient: 'Rafael Tavares', city: 'Curitiba, PR', region: 'Sul', status: 'Entrega frustrada', due: 'Vence hoje', dueLevel: 2, lastMove: 'há 6h', anomaly: true,
+    anomalyText: 'Segunda tentativa de entrega frustrada (destinatário ausente). Reentrega agendada sem confirmação do cliente.',
+    timeline: [tl('Tentativa de entrega não efetuada', 'Curitiba, PR', '13 set · 09:20'), tl('Tentativa de entrega não efetuada', 'Curitiba, PR', '12 set · 14:05'), tl('Em rota de entrega', 'Curitiba, PR', '12 set · 08:30'), tl('Chegada na unidade', 'Curitiba, PR', '11 set · 22:10'), tl('Coletado', 'São Paulo, SP', '09 set · 15:00')] },
+  { code: 'LG2039481122', carrier: 'Loggi', recipient: 'Camila Duarte', city: 'São Paulo, SP', region: 'Sudeste', status: 'Saiu p/ entrega', due: 'Vence em 2 dias', dueLevel: 0, lastMove: 'há 40min', anomaly: false,
+    timeline: [tl('Saiu para entrega', 'São Paulo, SP', '13 set · 08:50'), tl('Chegou ao hub', 'São Paulo, SP', '13 set · 04:12'), tl('Coletado', 'São Paulo, SP', '12 set · 18:30')] },
+  { code: 'TE930018472210', carrier: 'Total Express', recipient: 'Mercearia Dois Irmãos', city: 'Recife, PE', region: 'Nordeste', status: 'Em trânsito', due: 'Vence em 4 dias', dueLevel: 0, lastMove: 'há 3h', anomaly: true,
+    anomalyText: 'Rota desviada: pacote registrado em Salvador, BA, fora do trajeto esperado SP → Recife.',
+    timeline: [tl('Em trânsito', 'Salvador, BA', '13 set · 06:00'), tl('Em trânsito', 'Vitória da Conquista, BA', '12 set · 11:30'), tl('Coletado', 'Guarulhos, SP', '10 set · 19:45')] },
+  { code: 'QB771204558BR', carrier: 'Correios', recipient: 'Lucas Ferreira', city: 'Porto Alegre, RS', region: 'Sul', status: 'Em trânsito', due: 'Vence em 3 dias', dueLevel: 0, lastMove: 'há 5h', anomaly: false,
+    timeline: [tl('Objeto em trânsito', 'Cajamar, SP', '13 set · 04:30'), tl('Objeto postado', 'São Paulo, SP', '12 set · 16:10')] },
+  { code: '10084531276113', carrier: 'Jadlog', recipient: 'Ana Paula Ribeiro', city: 'Goiânia, GO', region: 'Centro-Oeste', status: 'Em trânsito', due: 'Vence em 5 dias', dueLevel: 0, lastMove: 'há 9h', anomaly: false,
+    timeline: [tl('Em trânsito', 'Uberlândia, MG', '13 set · 00:15'), tl('Coletado', 'São Paulo, SP', '11 set · 17:40')] },
+  { code: 'LG2039480917', carrier: 'Loggi', recipient: 'João Pedro Lima', city: 'Campinas, SP', region: 'Sudeste', status: 'Entregue', due: 'No prazo', dueLevel: 0, lastMove: 'ontem', anomaly: false,
+    timeline: [tl('Entregue', 'Campinas, SP', '12 set · 15:22'), tl('Saiu para entrega', 'Campinas, SP', '12 set · 08:40'), tl('Coletado', 'São Paulo, SP', '11 set · 18:00')] },
+  { code: 'NL482913912BR', carrier: 'Correios', recipient: 'Fernanda Souza', city: 'Manaus, AM', region: 'Norte', status: 'Postado', due: 'Vence em 9 dias', dueLevel: 0, lastMove: 'há 1h', anomaly: false,
+    timeline: [tl('Objeto postado', 'São Paulo, SP', '13 set · 08:10')] },
+];
+const INCIDENTS = [
+  { id: 1, severity: 'Crítico', rule: 'Parada prolongada', title: 'Pacote parado 52h em Contagem/MG', desc: 'Tempo na filial 3,2× acima da média. Prazo final em 1 dia — alerta preditivo enviado ao cliente final com nova estimativa.', code: 'NL482913776BR', carrier: 'Correios', when: 'há 20 min', notified: true, open: true },
+  { id: 2, severity: 'Crítico', rule: 'Entrega frustrada ×2', title: 'Duas tentativas frustradas em Curitiba/PR', desc: 'Destinatário ausente nas duas tentativas. Sugerido contato para confirmar endereço antes da terceira tentativa.', code: '10084531275940', carrier: 'Jadlog', when: 'há 6 h', notified: true, open: true },
+  { id: 3, severity: 'Atenção', rule: 'Rota desviada', title: 'Desvio de rota detectado (Salvador/BA)', desc: 'Pacote com destino Recife registrado fora do trajeto previsto. Prazo ainda dentro da margem.', code: 'TE930018472210', carrier: 'Total Express', when: 'há 3 h', notified: false, open: true },
+  { id: 4, severity: 'Info', rule: 'Webhook indisponível', title: 'Webhook da Jadlog sem resposta por 40 min', desc: 'Worker alternou para polling com retry (exponential backoff). Nenhum evento perdido.', code: '—', carrier: 'Jadlog', when: 'há 11 h', notified: false, open: false },
+];
+const TRIGGERS = [
+  { id: 'stall', label: 'Parada prolongada', hint: '> 36h na mesma unidade', on: true },
+  { id: 'fail', label: 'Tentativa frustrada', hint: 'A cada tentativa não efetuada', on: true },
+  { id: 'route', label: 'Rota desviada', hint: 'Fora do trajeto esperado', on: false },
+  { id: 'late', label: 'Risco de atraso preditivo', hint: 'Antes do prazo expirar', on: true },
+  { id: 'out', label: 'Saiu para entrega', hint: 'Aviso de chegada no dia', on: true },
+  { id: 'done', label: 'Entregue', hint: 'Confirmação de recebimento', on: false },
+];
+const PERF = {
+  Correios: { volume: 1284, transit: 5.8, onTime: 87, loss: 0.9, redeliver: 6.1, byRegion: { Norte: -9, Nordeste: -4, Sul: 2, Sudeste: 4, 'Centro-Oeste': -1 } },
+  Jadlog: { volume: 642, transit: 4.1, onTime: 91, loss: 0.6, redeliver: 7.4, byRegion: { Norte: -12, Nordeste: -6, Sul: 3, Sudeste: 3, 'Centro-Oeste': 0 } },
+  Loggi: { volume: 918, transit: 1.6, onTime: 96, loss: 0.3, redeliver: 3.2, byRegion: { Norte: -30, Nordeste: -20, Sul: -4, Sudeste: 2, 'Centro-Oeste': -8 } },
+  'Total Express': { volume: 377, transit: 4.9, onTime: 83, loss: 1.4, redeliver: 8.8, byRegion: { Norte: -8, Nordeste: 1, Sul: -2, Sudeste: 3, 'Centro-Oeste': -3 } },
+};
+const CARRIER_COLOR = { Correios: '#0F2A4A', Jadlog: '#E8621A', Loggi: '#1F7A4D', 'Total Express': '#7A4A9A' };
+
+class Component extends DCLogic {
+  state = { screen: null, query: '', statusF: 'Todas', selected: null, orders: ORDERS, incidents: INCIDENTS, sevF: 'Todos', triggers: TRIGGERS,
+    showNew: false, newCode: '', newName: '', newCity: '', newError: '', toast: '', period: '30', region: 'all', carrierF: 'all', exported: false };
+  detect(code) { const c = code.trim().toUpperCase(); return Object.keys(CARRIERS).find(k => CARRIERS[k].re.test(c)) || null; }
+  toast(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2600); }
+  renderVals() {
+    const s = this.state, p = this.props;
+    const screen = s.screen || p.startScreen || 'orders';
+    const go = k => () => this.setState({ screen: k, selected: null });
+    const openOrders = s.incidents.filter(i => i.open).length;
+    const nav = [['orders', 'Encomendas', 0], ['alerts', 'Alertas', openOrders], ['dash', 'Desempenho', 0]].map(([k, label, badge]) => ({
+      label, badge, go: go(k), color: screen === k ? '#EEEBE3' : 'rgba(238,235,227,.7)', bg: screen === k ? 'rgba(238,235,227,.1)' : 'transparent', border: screen === k ? '#E8621A' : 'transparent' }));
+    const q = s.query.toLowerCase();
+    const visible = s.orders.filter(o => (s.statusF === 'Todas' || (s.statusF === 'Com anomalia' ? o.anomaly : o.status === s.statusF)) &&
+      (!q || o.code.toLowerCase().includes(q) || o.recipient.toLowerCase().includes(q) || o.city.toLowerCase().includes(q)));
+    const decorate = o => ({ ...o, statusBg: STATUS[o.status][0], statusColor: STATUS[o.status][1], dueColor: o.dueLevel ? '#B3261E' : '#3A4152',
+      rowBg: o.anomaly ? '#FDF6EF' : 'transparent', open: () => this.setState({ selected: o.code }) });
+    const chip = (label, active, set) => ({ label, go: set, bg: active ? '#141A26' : '#FBFAF6', color: active ? '#EEEBE3' : '#141A26', border: active ? '#141A26' : '#D9D4C7' });
+    const statusChips = ['Todas', 'Com anomalia', 'Em trânsito', 'Parado', 'Entrega frustrada', 'Entregue'].map(l => chip(l, s.statusF === l, () => this.setState({ statusF: l })));
+    const kpis = [
+      { label: 'Em trânsito', value: s.orders.filter(o => !['Entregue'].includes(o.status)).length, color: '#141A26' },
+      { label: 'Com anomalia', value: s.orders.filter(o => o.anomaly).length, color: '#E8621A' },
+      { label: 'Vencem hoje', value: s.orders.filter(o => o.due === 'Vence hoje').length, color: '#B3261E' },
+      { label: 'Entregues (7d)', value: 312, color: '#1F7A4D' },
+    ];
+    const selO = s.orders.find(o => o.code === s.selected);
+    const sel = selO ? { ...decorate(selO), timeline: selO.timeline.map((e, i) => ({ ...e, dot: i === 0 ? (selO.anomaly ? '#E8621A' : '#0F2A4A') : '#B8B2A3', line: i === selO.timeline.length - 1 ? 'transparent' : '#D9D4C7' })) } : {};
+    const sevOrder = { Crítico: '#B3261E', Atenção: '#E8621A', Info: '#5A6273' };
+    const incidents = s.incidents.filter(i => s.sevF === 'Todos' || i.severity === s.sevF).map(i => ({ ...i, dot: sevOrder[i.severity], opacity: i.open ? 1 : .55, isOpen: i.open, isResolved: !i.open,
+      resolve: () => { this.setState({ incidents: s.incidents.map(x => x.id === i.id ? { ...x, open: false } : x) }); this.toast('Incidente marcado como resolvido'); },
+      openOrder: e => { e.preventDefault(); if (i.code !== '—') this.setState({ screen: 'orders', selected: i.code }); } }));
+    const sevChips = ['Todos', 'Crítico', 'Atenção', 'Info'].map(l => chip(l, s.sevF === l, () => this.setState({ sevF: l })));
+    const triggers = s.triggers.map(t => ({ ...t, bg: t.on ? '#1F7A4D' : '#B8B2A3', knob: t.on ? '21px' : '3px',
+      toggle: () => this.setState({ triggers: s.triggers.map(x => x.id === t.id ? { ...x, on: !x.on } : x) }) }));
+    const det = this.detect(s.newCode);
+    const detectState = !s.newCode ? ['#B8B2A3', '#5A6273', 'Aguardando código…'] : det ? ['#1F7A4D', '#1F7A4D', `Transportadora identificada: ${det}`] : ['#B3261E', '#B3261E', 'Formato não reconhecido pelas transportadoras integradas'];
+    const rows = Object.keys(PERF).filter(k => s.carrierF === 'all' || k === s.carrierF).map(k => {
+      const b = PERF[k], adj = s.region === 'all' ? 0 : b.byRegion[s.region], pf = s.period === '7' ? .25 : s.period === '90' ? 2.9 : 1;
+      const onTime = Math.max(40, Math.min(99, b.onTime + adj));
+      return { name: k, volume: Math.round(b.volume * pf * (s.region === 'all' ? 1 : .28)), transit: (b.transit - adj * .08).toFixed(1), onTime, loss: (b.loss - adj * .02).toFixed(1), redeliver: (b.redeliver - adj * .15).toFixed(1), onTimeColor: onTime >= 90 ? '#1F7A4D' : onTime >= 85 ? '#141A26' : '#B3261E', color: CARRIER_COLOR[k] };
+    });
+    const bars = (title, key, fmt, max) => ({ title, rows: rows.map(r => ({ name: r.name, text: fmt(r[key]), pct: Math.min(100, (parseFloat(r[key]) / max) * 100), color: r.color })) });
+    const metrics = [bars('Pontualidade', 'onTime', v => v + '%', 100), bars('Tempo médio de trânsito', 'transit', v => v + ' d', 8), bars('Sinistros + reentrega', 'redeliver', v => v + '%', 12)];
+    return {
+      nav, lastSync: '09:41', queueSize: 128, isOrders: screen === 'orders', isAlerts: screen === 'alerts', isDash: screen === 'dash',
+      kpis, query: s.query, setQuery: e => this.setState({ query: e.target.value }), statusChips, orders: visible.map(decorate), noOrders: visible.length === 0,
+      hasSelected: !!selO, sel, closeDetail: () => this.setState({ selected: null }),
+      incidents, sevChips, triggers, activeTriggers: s.triggers.filter(t => t.on).length,
+      showNew: s.showNew, openNew: () => this.setState({ showNew: true, newCode: '', newName: '', newCity: '', newError: '' }), closeNew: () => this.setState({ showNew: false }), stop: e => e.stopPropagation(),
+      newCode: s.newCode, setNewCode: e => this.setState({ newCode: e.target.value.toUpperCase(), newError: '' }), newName: s.newName, setNewName: e => this.setState({ newName: e.target.value }), newCity: s.newCity, setNewCity: e => this.setState({ newCity: e.target.value }),
+      detectDot: detectState[0], detectColor: detectState[1], detectText: detectState[2], newError: s.newError,
+      submitNew: e => { e.preventDefault(); const code = s.newCode.trim();
+        if (!det) return this.setState({ newError: 'Informe um código válido de uma transportadora integrada.' });
+        if (!s.newName.trim()) return this.setState({ newError: 'Informe o destinatário.' });
+        if (s.orders.some(o => o.code === code)) return this.setState({ newError: 'Este código já está cadastrado.' });
+        const o = { code, carrier: det, recipient: s.newName.trim(), city: s.newCity.trim() || '—', region: 'Sudeste', status: 'Postado', due: 'Vence em 7 dias', dueLevel: 0, lastMove: 'agora', anomaly: false, timeline: [tl('Cadastrado — aguardando primeira consulta à API', det, 'agora')] };
+        this.setState({ orders: [o, ...s.orders], showNew: false, statusF: 'Todas', query: '' }); this.toast(`Pedido cadastrado · ${det} identificada · consulta agendada`); },
+      toast: s.toast,
+      period: s.period, setPeriod: e => this.setState({ period: e.target.value }), region: s.region, setRegion: e => this.setState({ region: e.target.value }), carrierF: s.carrierF, setCarrierF: e => this.setState({ carrierF: e.target.value }),
+      dashScope: `${rows.reduce((a, r) => a + r.volume, 0).toLocaleString('pt-BR')} encomendas no recorte`, metrics, carrierRows: rows,
+      exportLabel: s.exported ? 'Relatório exportado ✓' : 'Exportar CSV', exportCsv: () => { this.setState({ exported: true }); this.toast('relatorio_transportadoras.csv gerado'); setTimeout(() => this.setState({ exported: false }), 2500); },
+    };
+  }
+}
+</script>
+</body>
+</html>

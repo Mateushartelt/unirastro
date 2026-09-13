@@ -1,0 +1,109 @@
+.wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+/* --- Cabecalho --- */
+
+.headRow th {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* --- Linhas --- */
+
+.row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.row:hover,
+.row:focus-visible {
+  background: var(--row-hover);
+}
+
+.anomaly {
+  background: var(--row-anomaly);
+}
+
+.row td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--divider);
+  vertical-align: middle;
+}
+
+/* --- Celulas --- */
+
+.codeCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.anomalyDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--orange);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.carrier {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recipient {
+  display: block;
+  font-size: 14px;
+}
+
+.city {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.due,
+.dueUrgent {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.due {
+  color: var(--body);
+}
+
+.dueUrgent {
+  color: var(--red);
+}
+
+.lastMove {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}

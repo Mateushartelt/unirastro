@@ -1,0 +1,166 @@
+/*
+ * Tokens do design UNIRASTRO.
+ * Extraidos do prototipo em design/unirastro-requisitos-pdf/project/UNIRASTRO Painel.dc.html
+ * Nao alterar valores sem conferir o prototipo — a fidelidade visual depende deles.
+ */
+
+:root {
+  /* --- Superficies e bordas --- */
+  --bg: #eeebe3;
+  --surface: #fbfaf6;
+  --surface-input: #ffffff;
+  --border: #d9d4c7;
+  --divider: #e7e2d6;
+
+  /* --- Texto --- */
+  --ink: #141a26;
+  --body: #3a4152;
+  --muted: #5a6273;
+
+  /* --- Marca --- */
+  --navy: #0f2a4a;
+  --orange: #e8621a;
+  --orange-hover: #f27a38;
+
+  /* --- Semantica --- */
+  --green: #1f7a4d;
+  --green-dot: #4cc38a;
+  --red: #b3261e;
+  --amber-ink: #9a3d0b;
+  --amber-bg: #fcede3;
+
+  /* --- Estados de linha --- */
+  --row-anomaly: #fdf6ef;
+  --row-hover: #f1ede2;
+  --grey-dot: #b8b2a3;
+
+  /* --- Transportadoras --- */
+  --carrier-correios: #0f2a4a;
+  --carrier-jadlog: #e8621a;
+  --carrier-loggi: #1f7a4d;
+  --carrier-total-express: #7a4a9a;
+
+  /* --- Sobreposicoes --- */
+  --overlay-drawer: rgba(15, 42, 74, 0.35);
+  --overlay-modal: rgba(15, 42, 74, 0.45);
+  --shadow-drawer: -12px 0 40px rgba(15, 42, 74, 0.25);
+  --shadow-modal: 0 24px 60px rgba(15, 42, 74, 0.35);
+  --shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+  /* --- Contraste sobre o navy da barra lateral --- */
+  --on-navy: #eeebe3;
+  --on-navy-dim: rgba(238, 235, 227, 0.7);
+  --on-navy-faint: rgba(238, 235, 227, 0.6);
+  --on-navy-line: rgba(238, 235, 227, 0.14);
+  --on-navy-wash: rgba(238, 235, 227, 0.1);
+  --on-navy-wash-soft: rgba(238, 235, 227, 0.06);
+
+  /* --- Tipografia --- */
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* --- Layout --- */
+  --sidebar-width: 232px;
+  --main-padding-block-start: 32px;
+  --main-padding-inline: 40px;
+  --main-padding-block-end: 56px;
+}
+
+/* --- Reset enxuto --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--navy);
+}
+
+a:hover {
+  color: var(--orange);
+}
+
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 1px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+/* --- Animacoes do design --- */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

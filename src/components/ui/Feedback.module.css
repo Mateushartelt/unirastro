@@ -1,0 +1,23 @@
+.empty,
+.loading,
+.error {
+  margin: 0;
+  padding: 32px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.loading {
+  color: var(--muted);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.error {
+  color: var(--red);
+  font-weight: 500;
+}

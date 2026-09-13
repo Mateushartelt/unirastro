@@ -1,0 +1,79 @@
+/* --- Linha de deteccao da transportadora --- */
+
+.detect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 18px;
+  min-height: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.detectDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.detectIdle {
+  color: var(--muted);
+}
+
+.detectIdle .detectDot {
+  background: var(--grey-dot);
+}
+
+.detectOk {
+  color: var(--green);
+}
+
+.detectFail {
+  color: var(--red);
+}
+
+/* --- Campos lado a lado --- */
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.error {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--red);
+}
+
+/* --- Ajuda de formatos --- */
+
+.formats {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.formatsSummary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.formatsList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+@media (max-width: 480px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}

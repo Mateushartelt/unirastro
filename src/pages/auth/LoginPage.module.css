@@ -1,0 +1,210 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* --- Metade da marca --- */
+
+.brandPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  padding: 48px 44px;
+  background: var(--navy);
+  color: var(--on-navy);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mark {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--orange);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.brandName {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+
+.brandSub {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--on-navy-faint);
+}
+
+/* Agrupa promessa e explicacao para que fiquem juntas, e nao esticadas pelo space-between. */
+.pitchGroup {
+  margin-top: auto;
+}
+
+.pitch {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.pitchSub {
+  margin: 16px 0 0;
+  max-width: 42ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--on-navy-dim);
+}
+
+/* --- Metade do formulario --- */
+
+.formPanel {
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+}
+
+.card {
+  width: min(400px, 100%);
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  animation: fadeUp 0.4s ease both;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 6px 0 24px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--red);
+}
+
+.submit {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* --- Contas de demonstracao --- */
+
+.demo {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--divider);
+}
+
+.demoTitle {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.demoList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demoButton {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.demoButton:hover {
+  border-color: var(--ink);
+  background: var(--row-hover);
+}
+
+.demoRole {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.demoEmail {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--body);
+}
+
+.demoMeta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* --- Telas estreitas --- */
+
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brandPanel {
+    gap: 24px;
+    padding: 28px 20px;
+  }
+
+  .pitch {
+    font-size: 24px;
+  }
+
+  .formPanel {
+    padding: 28px 16px 48px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+}

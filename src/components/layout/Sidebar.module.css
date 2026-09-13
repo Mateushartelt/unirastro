@@ -1,0 +1,246 @@
+.sidebar {
+  width: var(--sidebar-width);
+  flex: 0 0 var(--sidebar-width);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  background: var(--navy);
+  color: var(--on-navy);
+}
+
+/* --- Marca --- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 24px;
+  border-bottom: 1px solid var(--on-navy-line);
+}
+
+.mark {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--orange);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.brandName {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.brandSub {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--on-navy-faint);
+}
+
+/* --- Navegacao --- */
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 16px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--on-navy-dim);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.item:hover:not(.disabled) {
+  background: var(--on-navy-wash);
+  color: var(--on-navy);
+}
+
+.active {
+  background: var(--on-navy-wash);
+  border-left-color: var(--orange);
+  color: var(--on-navy);
+}
+
+.disabled {
+  color: rgba(238, 235, 227, 0.35);
+  cursor: not-allowed;
+}
+
+.badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.soon {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* --- Workers --- */
+
+.workers {
+  margin-top: auto;
+  padding: 14px 12px;
+  background: var(--on-navy-wash-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.workersTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-dot);
+  display: inline-block;
+  flex: 0 0 auto;
+  animation: pulse 2s infinite;
+}
+
+.workersLine {
+  margin: 0;
+  color: var(--on-navy-dim);
+}
+
+/* --- Usuario --- */
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px 0;
+  font-size: 12px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.userInfo {
+  min-width: 0;
+}
+
+.userName {
+  display: block;
+  color: var(--on-navy);
+  font-weight: 500;
+}
+
+.userRole,
+.userTenant {
+  display: block;
+  color: var(--on-navy-dim);
+}
+
+.userTenant {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.signOut {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--on-navy-line);
+  background: transparent;
+  color: var(--on-navy-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.signOut:hover {
+  background: var(--on-navy-wash);
+  color: var(--on-navy);
+}
+
+/* --- Telas estreitas: a barra lateral vira barra superior --- */
+
+@media (max-width: 860px) {
+  .sidebar {
+    width: 100%;
+    flex: 0 0 auto;
+    position: static;
+    height: auto;
+    padding: 16px;
+  }
+
+  .brand {
+    padding-bottom: 16px;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-top: 12px;
+  }
+
+  .item {
+    width: auto;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+  }
+
+  .active {
+    border-left-color: transparent;
+    border-bottom-color: var(--orange);
+  }
+
+  .workers {
+    margin-top: 12px;
+  }
+
+  .signOut {
+    align-self: flex-start;
+  }
+}
