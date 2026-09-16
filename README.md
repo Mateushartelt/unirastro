@@ -131,53 +131,207 @@ Vem do C2 do modelo C4 e dos requisitos não funcionais:
 
 ## Modelo C4
 
+Os quatro níveis estão em **PlantUML**, com a notação C4-PlantUML (`Person`, `System`,
+`Container`, `Component`, `Rel`). Cada seção tem o código-fonte, para reeditar ou regerar
+quando o backend existir, e logo abaixo o SVG já renderizado e versionado em
+`docs/diagrams/` — não depende de nenhum serviço externo para aparecer no GitHub.
+
 ### C1 — Contexto
 
-```mermaid
-flowchart TB
-    EmpresaCliente(["Empresa Cliente<br/>equipe de logística, pós-venda e suporte"])
-    ClienteFinal(["Cliente Final<br/>consumidor que aguarda a entrega"])
-    UNIRASTRO[["UNIRASTRO<br/>SaaS multi-tenant de rastreamento proativo"]]
-    Transportadoras[/"APIs das Transportadoras<br/>Correios, Jadlog, Loggi etc."/]
-    Notificacao[/"Serviços de Notificação<br/>WhatsApp API, SendGrid, Twilio"/]
+```plantuml
+@startuml C1-Contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
-    EmpresaCliente -->|cadastra encomendas, acompanha alertas, analisa relatórios| UNIRASTRO
-    UNIRASTRO -->|consulta status de rastreio| Transportadoras
-    UNIRASTRO -->|envia alertas proativos| Notificacao
-    Notificacao -->|notifica sobre atrasos| ClienteFinal
+title C1 — Diagrama de Contexto — UNIRASTRO
+
+Person(empresaCliente, "Empresa Cliente", "Equipe de logística, pós-venda e suporte da empresa contratante")
+System(unirastro, "UNIRASTRO", "SaaS multi-tenant de rastreamento proativo de encomendas")
+System_Ext(transportadoras, "APIs das Transportadoras", "Sistemas externos (Correios, Jadlog, Loggi etc.) que fornecem os eventos de rastreio")
+System_Ext(notificacao, "Serviços de Notificação", "Gateways externos de mensageria (WhatsApp API, SendGrid, Twilio) para envio de mensagens")
+Person(clienteFinal, "Cliente Final", "Consumidor final que realizou a compra e aguarda a entrega")
+
+Rel(empresaCliente, unirastro, "Cadastra encomendas, acompanha alertas e analisa relatórios")
+Rel(unirastro, transportadoras, "Consulta informações da entrega")
+Rel(unirastro, notificacao, "Envia notificações")
+Rel(notificacao, clienteFinal, "Envia notificação")
+
+SHOW_LEGEND()
+@enduml
 ```
+
+![C1 — Diagrama de Contexto](docs/diagrams/c1-contexto.svg)
 
 ### C2 — Containers
 
-```mermaid
-flowchart TB
-    EmpresaCliente(["Empresa Cliente"])
+```plantuml
+@startuml C2-Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-    subgraph SaaS["UNIRASTRO SaaS"]
-        Web["Aplicação Web<br/>React / Next.js<br/><i>esta entrega</i>"]
-        API["API Backend<br/>Node.js / Express<br/><i>planejado</i>"]
-        DB[("Banco de Dados<br/>PostgreSQL / MariaDB<br/><i>planejado</i>")]
-        Queue["Fila de Mensagens<br/>RabbitMQ / Kafka<br/><i>planejado</i>"]
-        Worker["Worker de Rastreio<br/>Node.js / Python<br/><i>planejado</i>"]
-        Cache[("Cache em Memória<br/>Redis<br/><i>planejado</i>")]
-    end
+title C2 — Diagrama de Containers — UNIRASTRO
 
-    Transportadoras[/"APIs das Transportadoras"/]
-    Notificacao[/"Serviços de Notificação"/]
+Person(empresaCliente, "Empresa Cliente", "Equipe de logística e pós-venda")
 
-    EmpresaCliente -->|HTTPS| Web
-    Web -->|JSON/HTTPS| API
-    Web -.->|lê dados frequentes| Cache
-    API --> DB
-    API -->|publica tarefas de consulta| Queue
-    Queue --> Worker
-    Worker -->|consulta status| Transportadoras
-    Worker -->|dispara alertas| Notificacao
-    Worker --> DB
+System_Boundary(saas, "UNIRASTRO SaaS") {
+  Container(web, "Aplicação Web", "React / Next.js", "Painel interativo para acompanhamento e relatórios")
+  Container(api, "API Backend", "Node.js / Express", "Gerencia autenticação, regras de negócio e APIs")
+  ContainerDb(db, "Banco de Dados", "PostgreSQL / MariaDB", "Guarda cadastros, entregas e histórico")
+  Container(queue, "Fila de Mensagens", "RabbitMQ / Kafka", "Isola falhas externas e garante resiliência")
+  Container(worker, "Worker de Rastreio", "Node.js / Python", "Processa atualizações e calcula atrasos")
+  ContainerDb(cache, "Cache em Memória", "Redis", "Acelera leitura de relatórios e sessões")
+}
+
+System_Ext(transportadoras, "APIs das Transportadoras", "Correios, Jadlog, Loggi etc.")
+System_Ext(notificacao, "Serviços de Notificação", "WhatsApp API, SendGrid, Twilio")
+Person(clienteFinal, "Cliente Final", "Consumidor aguardando a entrega")
+
+Rel(empresaCliente, web, "Acessa painel", "HTTPS")
+Rel(web, api, "Chamadas REST", "JSON")
+Rel(api, cache, "Cache de consultas", "TCP")
+Rel(api, db, "Leitura/Escrita", "SQL")
+Rel(api, queue, "Publica eventos")
+Rel(queue, worker, "Consome mensagens")
+Rel(worker, transportadoras, "Consulta rastreios", "REST")
+Rel(queue, notificacao, "Dispara alertas", "REST")
+Rel(notificacao, clienteFinal, "Envia aviso", "WhatsApp/SMS")
+
+SHOW_LEGEND()
+@enduml
 ```
 
-**C3 (Componentes) e C4 (Código) ainda não foram elaborados** — vêm junto com o desenho do
-backend, ver [Próximas etapas](#próximas-etapas).
+![C2 — Diagrama de Containers](docs/diagrams/c2-containers.svg)
+
+Web, Backend, Banco, Fila, Worker e Cache são o C2 completo previsto no documento de
+requisitos. Apenas a **Aplicação Web** está implementada nesta entrega — os demais containers
+são a estrutura planejada para o backend (ver [Ferramentas e tecnologias](#ferramentas-e-tecnologias)
+e [Próximas etapas](#próximas-etapas)).
+
+### C3 — Componentes
+
+Zoom no container **Aplicação Web** (implementado nesta entrega — nomes reais dos módulos):
+
+```plantuml
+@startuml C3-AplicacaoWeb
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+title C3 — Componentes da Aplicação Web (implementado)
+
+Container_Boundary(web, "Aplicação Web") {
+  Component(login, "LoginPage", "React", "Tela de login")
+  Component(orders, "OrdersPage", "React", "Tela de encomendas")
+  Component(alerts, "AlertsPage", "React", "Tela de alertas")
+
+  Component(authCtx, "AuthContext", "React Context", "Sessão do usuário")
+  Component(dataCtx, "DataContext", "React Context", "Sinal de versão / invalidate")
+
+  Component(authSvc, "authService", "Service", "Login e sessão")
+  Component(ordersSvc, "ordersService", "Service", "Cadastro e consulta de encomendas")
+  Component(alertsSvc, "alertsService", "Service", "Incidentes e gatilhos")
+  Component(store, "store", "Service", "Estado em memória")
+  Component(client, "client", "Service", "Envelope de resposta + latência simulada")
+
+  Component(carrier, "carrierDetection", "Lib", "Identifica a transportadora")
+  Component(anomaly, "anomalyRules", "Lib", "RF04 — regras de anomalia")
+}
+
+ComponentDb(mocks, "mocks/*", "Dados simulados")
+
+Rel(login, authCtx, "usa")
+Rel(authCtx, authSvc, "chama")
+Rel(orders, dataCtx, "observa versão")
+Rel(orders, ordersSvc, "chama")
+Rel(alerts, dataCtx, "observa versão")
+Rel(alerts, alertsSvc, "chama")
+
+Rel(ordersSvc, carrier, "usa")
+Rel(ordersSvc, anomaly, "usa")
+Rel(ordersSvc, store, "lê/grava")
+Rel(ordersSvc, client, "usa")
+
+Rel(alertsSvc, anomaly, "usa")
+Rel(alertsSvc, store, "lê/grava")
+Rel(alertsSvc, client, "usa")
+
+Rel(authSvc, mocks, "lê")
+Rel(authSvc, client, "usa")
+Rel(store, mocks, "semeia a partir de")
+
+SHOW_LEGEND()
+@enduml
+```
+
+![C3 — Componentes da Aplicação Web](docs/diagrams/c3-aplicacao-web.svg)
+
+`DataContext` não busca dado nenhum — só guarda uma versão que `OrdersPage` e `AlertsPage`
+observam para saber quando reconsultar o serviço depois de uma mutação (ex.: resolver um
+incidente). Quem fala com o serviço é a própria página.
+
+Zoom no container **API Backend** (planejado — ainda não existe código, é a estrutura em
+camadas prevista para quando ele for escrito):
+
+```plantuml
+@startuml C3-APIBackend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C3 — Componentes da API Backend (planejado, sem código ainda)
+
+Container_Boundary(api, "API Backend (planejado)") {
+  Component(routes, "Rotas / Controllers", "Express")
+  Component(appsvc, "Serviços de aplicação", "regras de negócio")
+  Component(repo, "Repositórios", "acesso a dados")
+  Component(integr, "Integrações", "fila, cache, transportadoras")
+}
+
+Rel(routes, appsvc, "chama")
+Rel(appsvc, repo, "usa")
+Rel(appsvc, integr, "usa")
+@enduml
+```
+
+![C3 — Componentes da API Backend](docs/diagrams/c3-api-backend.svg)
+
+### C4 — Código
+
+Zoom no trecho mais relevante do produto, `lib/anomalyRules.ts` (RF04, implementado). No nível
+de código o próprio C4 recomenda notação livre — aqui é um diagrama de classes simples:
+
+```plantuml
+@startuml C4-Codigo-anomalyRules
+title C4 — Código — lib/anomalyRules.ts (RF04)
+
+class Order
+class Anomaly
+
+note "Rule = (order: Order) => Anomaly | null" as RuleType
+
+package "RULES: Rule[]" {
+  class stalledInTransit
+  class repeatedFailedAttempts
+  class routeDeviation
+  class predictiveDelayRisk
+}
+
+class detectAnomalies {
+  +detectAnomalies(order: Order): Anomaly[]
+}
+
+Order --> detectAnomalies : entrada
+detectAnomalies --> stalledInTransit : aplica
+detectAnomalies --> repeatedFailedAttempts : aplica
+detectAnomalies --> routeDeviation : aplica
+detectAnomalies --> predictiveDelayRisk : aplica
+stalledInTransit ..> Anomaly : produz
+repeatedFailedAttempts ..> Anomaly : produz
+routeDeviation ..> Anomaly : produz
+predictiveDelayRisk ..> Anomaly : produz
+detectAnomalies ..> Anomaly : retorna Anomaly[]\nordenado por SEVERITY_WEIGHT
+@enduml
+```
+
+![C4 — Código — anomalyRules.ts](docs/diagrams/c4-anomaly-rules.svg)
+
+Cada regra é uma função pura `(order) => Anomaly | null`, sem estado de tela — testável isolada
+e fácil de mover para o backend depois, que é onde vai rodar de fato.
 
 ## Requisitos funcionais
 
@@ -295,7 +449,7 @@ Registrado aqui porque delimitar o escopo faz parte da entrega.
 - **Tela de Desempenho por transportadora** (RF07 e RF09). Já está desenhada no protótipo,
   com gráficos comparativos, filtros por período e região, e exportação. Aparece desabilitada
   na navegação, marcada como próxima entrega.
-- **Componentes (C3) e Código (C4) do modelo C4.** Hoje só existem o Contexto (C1) e os
-  Containers (C2); os próximos níveis de detalhe vêm junto com o desenho do backend.
+- **C3 e C4 do container API Backend.** O C3/C4 da Aplicação Web já está no modelo; o do
+  backend é só a estrutura em camadas prevista, porque o código ainda não existe.
 - **Integração real com APIs de transportadoras.**
 - **Testes automatizados.**
