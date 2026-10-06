@@ -1,5 +1,5 @@
 import type { OrderWithAnomalies } from '../../types';
-import { calendarDaysUntil } from '../../lib/format';
+import { calendarDaysUntil } from '../../domain/time';
 import styles from './KpiRow.module.css';
 
 interface Kpi {

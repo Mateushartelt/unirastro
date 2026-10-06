@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { describeDetection, supportedFormats } from '../../lib/carrierDetection';
+import { useServices } from '../../composition/servicesContext';
+import type { NewOrderInput } from '../../domain/orders/newOrder';
 import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import { Modal } from '../ui/Modal';
+import { describeDetection } from './carrierFeedback';
 import styles from './NewOrderModal.module.css';
 
 interface NewOrderModalProps {
@@ -11,7 +13,7 @@ interface NewOrderModalProps {
   /** Erro devolvido pelo servico, como codigo duplicado. */
   serverError: string;
   onClose: () => void;
-  onSubmit: (input: { code: string; recipient: string; city: string }) => void;
+  onSubmit: (input: NewOrderInput) => void;
 }
 
 const DETECTION_TONE = {
@@ -38,7 +40,8 @@ export function NewOrderModal({
   const [recipient, setRecipient] = useState('');
   const [city, setCity] = useState('');
 
-  const detection = describeDetection(code);
+  const { carrierDetection } = useServices();
+  const detection = describeDetection(code, carrierDetection.detect(code));
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,7 +113,7 @@ export function NewOrderModal({
       <details className={styles.formats}>
         <summary className={styles.formatsSummary}>Formatos aceitos</summary>
         <ul className={styles.formatsList}>
-          {supportedFormats().map((f) => (
+          {carrierDetection.supportedFormats().map((f) => (
             <li key={f}>{f}</li>
           ))}
         </ul>

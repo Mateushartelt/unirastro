@@ -50,11 +50,3 @@ export const MOCK_USERS: User[] = [
     tenantId: 'tenant-bonsai',
   },
 ];
-
-/** Credenciais exibidas na tela de login, para facilitar a apresentação. */
-export const DEMO_CREDENTIALS = MOCK_USERS.map((u) => ({
-  email: u.email,
-  password: u.password,
-  role: u.role,
-  tenant: MOCK_TENANTS.find((t) => t.id === u.tenantId)!.name,
-}));

@@ -10,14 +10,14 @@
  * nao perdeu evento nenhum e a prova visivel dessa promessa.
  */
 
-import type { Incident } from '../types';
+import { SYSTEM_INCIDENT_KIND, type Incident } from '../types';
 import { hoursAgo } from './seedClock';
 
 export const MOCK_SYSTEM_INCIDENTS: Incident[] = [
   {
     id: 'sys-webhook-jadlog',
     tenantId: 'tenant-aurora',
-    rule: 'Webhook indisponível',
+    rule: SYSTEM_INCIDENT_KIND,
     severity: 'Info',
     title: 'Webhook da Jadlog sem resposta por 40 min',
     description:
@@ -31,7 +31,7 @@ export const MOCK_SYSTEM_INCIDENTS: Incident[] = [
   {
     id: 'sys-webhook-total',
     tenantId: 'tenant-bonsai',
-    rule: 'Webhook indisponível',
+    rule: SYSTEM_INCIDENT_KIND,
     severity: 'Info',
     title: 'Fila de eventos da Total Express acumulando',
     description:

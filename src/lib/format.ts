@@ -1,10 +1,15 @@
 /**
- * Formatacao de datas e rotulos, em portugues do Brasil.
+ * Formatacao de datas e rotulos, em portugues do Brasil. So apresentacao.
+ *
+ * Os calculos de tempo que as regras de negocio usam (horas decorridas, dias ate o prazo)
+ * foram para domain/time.ts. Este modulo depende do dominio, nunca o contrario.
  *
  * O design mostra tempos relativos ("ha 52h") e datas curtas ("11 set · 06:14"). Como os
  * dados simulados sao gerados a partir do momento atual, esses rotulos precisam ser
  * calculados, nunca escritos a mao — caso contrario a demonstracao envelhece sozinha.
  */
+
+import { calendarDaysUntil } from '../domain/time';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -24,15 +29,6 @@ const MONTHS = [
   'nov',
   'dez',
 ];
-
-/** Horas decorridas entre dois instantes ISO. Positivo quando `to` e posterior a `from`. */
-export function hoursBetween(from: string, to: string = nowIso()): number {
-  return (new Date(to).getTime() - new Date(from).getTime()) / HOUR;
-}
-
-export function nowIso(): string {
-  return new Date().toISOString();
-}
 
 /**
  * Tempo decorrido em linguagem natural: "agora", "ha 40min", "ha 52h", "ha 4 dias".
@@ -88,20 +84,6 @@ export function dueLabel(dueAt: string, delivered = false, deliveredAt?: string)
   if (days === 0) return { text: 'Vence hoje', urgent: true };
   if (days === 1) return { text: 'Vence em 1 dia', urgent: true };
   return { text: `Vence em ${days} dias`, urgent: false };
-}
-
-/**
- * Diferenca em dias de calendario, nao em blocos de 24 horas. Um prazo que termina as 23h de
- * hoje "vence hoje", mesmo faltando apenas uma hora.
- */
-export function calendarDaysUntil(iso: string): number {
-  const target = startOfDay(new Date(iso));
-  const today = startOfDay(new Date());
-  return Math.round((target.getTime() - today.getTime()) / DAY);
-}
-
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function plural(n: number): string {

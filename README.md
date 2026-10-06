@@ -64,6 +64,7 @@ não revela nenhuma encomenda da Aurora.
 npm run typecheck   # checagem de tipos
 npm run build       # build de produção
 npm run lint        # análise estática
+npm run arch        # confere se os imports respeitam as camadas do C3
 ```
 
 ## Arquitetura
@@ -72,20 +73,34 @@ O padrão é **Cliente-Servidor** (RNF01). O frontend não conhece regra de pers
 backend não conhece tela. Nesta entrega o servidor é simulado, mas a fronteira já está no
 lugar certo.
 
+Dentro do frontend o código segue os princípios **SOLID**, organizado em camadas:
+
 ```
 src/
-  types/        modelo de domínio
-  mocks/        dados simulados
-  services/     fronteira com o backend
-  lib/          regras de domínio puras
-  contexts/     sessão, avisos e sincronização
-  components/   layout, interface e componentes por área
-  pages/        telas, agrupadas por área
+  types/            modelo de domínio
+  domain/           regras de negócio puras (anomalias, transportadoras, incidentes, permissões)
+  services/
+    contracts.ts    interfaces da fronteira com o backend (o que as telas enxergam)
+    simulated/      backend simulado: implementa os contratos e declara as portas
+  infrastructure/   adaptadores das portas (memória, localStorage, transportadora simulada)
+  composition/      composition root: monta as dependências e injeta na árvore do React
+  mocks/            dados simulados (semente dos repositórios)
+  hooks/            carregamento de dados (useServiceQuery)
+  contexts/         sessão, avisos e sincronização
+  components/       layout, interface e componentes por área
+  lib/              formatação de apresentação
+  pages/            telas, agrupadas por área
 ```
 
-A regra que sustenta a separação: **as páginas nunca importam de `mocks/`, só de
-`services/`.** Quando o backend existir, apenas os arquivos de `services/` trocam o mock por
-`fetch`, e nenhuma tela muda.
+A regra que sustenta a separação: **telas e contextos só conhecem as interfaces de
+`services/contracts.ts`**, recebidas por `useServices()`. Quem escolhe a implementação é o
+composition root (`composition/container.ts`), o único arquivo que instancia classes
+concretas. Quando o backend existir, entram classes `Http*Service` que implementam os mesmos
+contratos, a troca acontece só no composition root, e nenhuma tela muda. O comando
+`npm run arch` confere automaticamente que nenhum import fura essas camadas.
+
+O relatório completo da refatoração (o que é cada princípio, as infrações encontradas e o
+checklist de conformidade) está em [`docs/solid-refatoracao.md`](docs/solid-refatoracao.md).
 
 Os serviços devolvem sempre o mesmo envelope, `{ success, message, errors, data }`, que é o
 formato da API do outro projeto da disciplina. Manter a simetria significa que a troca não
@@ -172,7 +187,7 @@ title C2 — Diagrama de Containers — UNIRASTRO
 Person(empresaCliente, "Empresa Cliente", "Equipe de logística e pós-venda")
 
 System_Boundary(saas, "UNIRASTRO SaaS") {
-  Container(web, "Aplicação Web", "React / Next.js", "Painel interativo para acompanhamento e relatórios")
+  Container(web, "Aplicação Web", "React / Vite", "Painel interativo para acompanhamento e relatórios")
   Container(api, "API Backend", "Node.js / Express", "Gerencia autenticação, regras de negócio e APIs")
   ContainerDb(db, "Banco de Dados", "PostgreSQL / MariaDB", "Guarda cadastros, entregas e histórico")
   Container(queue, "Fila de Mensagens", "RabbitMQ / Kafka", "Isola falhas externas e garante resiliência")
@@ -207,54 +222,87 @@ e [Próximas etapas](#próximas-etapas)).
 
 ### C3 — Componentes
 
-Zoom no container **Aplicação Web** (implementado nesta entrega — nomes reais dos módulos):
+Zoom no container **Aplicação Web** (implementado nesta entrega). Cada componente traz entre
+colchetes a pasta ou arquivo correspondente no código:
 
 ```plantuml
 @startuml C3-AplicacaoWeb
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-LAYOUT_WITH_LEGEND()
-title C3 — Componentes da Aplicação Web (implementado)
+LAYOUT_TOP_DOWN()
+title C3 — Componentes da Aplicação Web (implementado, após refatoração SOLID)
 
 Container_Boundary(web, "Aplicação Web") {
-  Component(login, "LoginPage", "React", "Tela de login")
-  Component(orders, "OrdersPage", "React", "Tela de encomendas")
-  Component(alerts, "AlertsPage", "React", "Tela de alertas")
 
-  Component(authCtx, "AuthContext", "React Context", "Sessão do usuário")
-  Component(dataCtx, "DataContext", "React Context", "Sinal de versão / invalidate")
+  Boundary(ui, "Interface", "pages/ · components/ · contexts/ · hooks/") {
+    Component(login, "LoginPage", "pages/auth", "Tela de login")
+    Component(orders, "OrdersPage", "pages/orders + components/orders", "Tela de encomendas")
+    Component(alerts, "AlertsPage", "pages/alerts + components/alerts", "Central de incidentes e gatilhos")
+    Component(shell, "AppShell", "components/layout", "Casca autenticada e barra lateral")
+    Component(authCtx, "AuthContext", "contexts/AuthContext.tsx", "Sessão e permissões do usuário")
+    Component(query, "useServiceQuery", "hooks/useServiceQuery.ts", "Carrega dados e recarrega quando a versão muda")
+    Component(dataCtx, "DataContext", "contexts/DataContext.tsx", "Sinal de versão / invalidate")
+  }
 
-  Component(authSvc, "authService", "Service", "Login e sessão")
-  Component(ordersSvc, "ordersService", "Service", "Cadastro e consulta de encomendas")
-  Component(alertsSvc, "alertsService", "Service", "Incidentes e gatilhos")
-  Component(store, "store", "Service", "Estado em memória")
-  Component(client, "client", "Service", "Envelope de resposta + latência simulada")
+  Component(root, "Composition root", "composition/", "Instancia as classes concretas e injeta os contratos na árvore (ServicesProvider)")
+  Component(contracts, "Contratos de serviço", "services/contracts.ts", "IAuthService, IOrdersService, IIncidentsService, ITriggersService, IWorkerStatusService, IDemoAccounts, ICarrierDetection")
 
-  Component(carrier, "carrierDetection", "Lib", "Identifica a transportadora")
-  Component(anomaly, "anomalyRules", "Lib", "RF04 — regras de anomalia")
+  Boundary(sim, "Backend simulado", "services/simulated/") {
+    Component(authSvc, "SimulatedAuthService", "implementa IAuthService", "Login e sessão")
+    Component(ordersSvc, "SimulatedOrdersService", "implementa IOrdersService", "Cadastro, consulta e atualização de encomendas")
+    Component(incidentsSvc, "SimulatedIncidentsService", "implementa IIncidentsService", "Incidentes derivados + resolução")
+    Component(triggersSvc, "SimulatedTriggersService", "implementa ITriggersService", "Gatilhos de notificação")
+    Component(workerSvc, "SimulatedWorkerStatusService", "implementa IWorkerStatusService", "Status dos workers")
+    Component(ports, "Portas", "services/simulated/ports.ts", "IOrderRepository, ITriggerRepository, IIncidentResolutionRepository, ISystemIncidentRepository, IUserDirectory, ISessionStorage, ICarrierTrackingGateway, IWorkerActivityRecorder, IWorkerStatusReader")
+    Component(network, "SimulatedNetwork", "services/simulated", "Envelope de resposta + latência simulada")
+  }
+
+  Boundary(domain, "Domínio", "domain/ (puro: sem React, sem mocks, sem storage)") {
+    Component(anomaly, "AnomalyDetector + AnomalyRule", "domain/anomalies", "RF04: regras de anomalia plugáveis")
+    Component(carrier, "CarrierDetector", "domain/carriers", "RF01: identifica a transportadora")
+    Component(incidents, "NotificationPolicy + incidentes", "domain/incidents", "RF05/RF06: deriva, ordena e marca notificação")
+    Component(newOrder, "Cadastro de encomenda", "domain/orders", "Validação e montagem do pedido")
+    Component(perms, "Permissões", "domain/permissions.ts", "RF10: matriz papel × ação")
+  }
+
+  Boundary(infra, "Infraestrutura", "infrastructure/") {
+    Component(memRepos, "Repositórios em memória", "infrastructure/memory", "Encomendas, gatilhos, incidentes, resoluções, workers, usuários")
+    Component(sessionStore, "LocalStorageSessionStorage", "infrastructure/browser", "Sessão no navegador")
+    Component(gateway, "SimulatedCarrierGateway", "infrastructure/carriers", "Simula a API da transportadora")
+  }
 }
 
-ComponentDb(mocks, "mocks/*", "Dados simulados")
+ComponentDb(mocks, "mocks/*", "Dados simulados", "Semente dos repositórios")
 
 Rel(login, authCtx, "usa")
-Rel(authCtx, authSvc, "chama")
-Rel(orders, dataCtx, "observa versão")
-Rel(orders, ordersSvc, "chama")
-Rel(alerts, dataCtx, "observa versão")
-Rel(alerts, alertsSvc, "chama")
+Rel(orders, query, "usa")
+Rel(alerts, query, "usa")
+Rel(shell, query, "usa")
+Rel(query, dataCtx, "observa versão")
+Rel(login, contracts, "IDemoAccounts")
+Rel(orders, contracts, "IOrdersService, ICarrierDetection")
+Rel(alerts, contracts, "IIncidentsService, ITriggersService")
+Rel(shell, contracts, "IIncidentsService, IWorkerStatusService")
+Rel(authCtx, contracts, "IAuthService")
+Rel(authCtx, perms, "usa")
 
-Rel(ordersSvc, carrier, "usa")
-Rel(ordersSvc, anomaly, "usa")
-Rel(ordersSvc, store, "lê/grava")
-Rel(ordersSvc, client, "usa")
+Rel(root, contracts, "entrega implementações de")
+Rel(root, sim, "instancia")
+Rel(root, infra, "instancia")
+Rel(root, domain, "instancia regras")
+Rel(root, mocks, "semeia a partir de")
 
-Rel(alertsSvc, anomaly, "usa")
-Rel(alertsSvc, store, "lê/grava")
-Rel(alertsSvc, client, "usa")
+Rel(sim, contracts, "implementa")
+Rel(sim, domain, "usa")
+Rel(sim, ports, "depende de")
+Rel(infra, ports, "implementa")
 
-Rel(authSvc, mocks, "lê")
-Rel(authSvc, client, "usa")
-Rel(store, mocks, "semeia a partir de")
+Lay_D(dataCtx, contracts)
+Lay_R(root, contracts)
+Lay_D(contracts, incidentsSvc)
+Lay_D(network, perms)
+Lay_D(newOrder, memRepos)
+Lay_R(memRepos, mocks)
 
 SHOW_LEGEND()
 @enduml
@@ -262,9 +310,17 @@ SHOW_LEGEND()
 
 ![C3 — Componentes da Aplicação Web](docs/diagrams/c3-aplicacao-web.svg)
 
-`DataContext` não busca dado nenhum — só guarda uma versão que `OrdersPage` e `AlertsPage`
-observam para saber quando reconsultar o serviço depois de uma mutação (ex.: resolver um
-incidente). Quem fala com o serviço é a própria página.
+Como ler o diagrama:
+
+- **Interface** só depende dos **Contratos de serviço**. Nenhuma tela importa classe concreta,
+  mock ou adaptador.
+- O **Backend simulado** implementa os contratos e depende das **Portas**; a
+  **Infraestrutura** implementa as portas. As duas setas apontam para interfaces, que é a
+  inversão de dependência (DIP).
+- O **Domínio** não depende de ninguém: não conhece React, mocks nem armazenamento.
+- O **Composition root** é o único que conhece tudo, porque é ele quem monta as peças.
+- `DataContext` não busca dado nenhum: só guarda uma versão que o `useServiceQuery` observa
+  para saber quando reconsultar o serviço depois de uma mutação (ex.: resolver um incidente).
 
 Zoom no container **API Backend** (planejado — ainda não existe código, é a estrutura em
 camadas prevista para quando ele for escrito):
@@ -292,46 +348,78 @@ Rel(appsvc, integr, "usa")
 
 ### C4 — Código
 
-Zoom no trecho mais relevante do produto, `lib/anomalyRules.ts` (RF04, implementado). No nível
+Zoom no trecho mais relevante do produto, `domain/anomalies` (RF04, implementado). No nível
 de código o próprio C4 recomenda notação livre — aqui é um diagrama de classes simples:
 
 ```plantuml
-@startuml C4-Codigo-anomalyRules
-title C4 — Código — lib/anomalyRules.ts (RF04)
+@startuml C4-Codigo-anomalias
+title C4 — Código — domain/anomalies (RF04, após refatoração SOLID)
 
 class Order
 class Anomaly
 
-note "Rule = (order: Order) => Anomaly | null" as RuleType
-
-package "RULES: Rule[]" {
-  class stalledInTransit
-  class repeatedFailedAttempts
-  class routeDeviation
-  class predictiveDelayRisk
+interface AnomalyRule {
+  +name: string
+  +triggerId: string | null
+  +evaluate(order: Order, now: Date): Anomaly | null
 }
 
-class detectAnomalies {
-  +detectAnomalies(order: Order): Anomaly[]
+package "domain/anomalies/rules" {
+  class StalledInTransitRule {
+    -thresholdHours = 36
+  }
+  class RepeatedFailedAttemptsRule {
+    -threshold = 2
+  }
+  class RouteDeviationRule
+  class PredictiveDelayRiskRule {
+    -windowDays = 1
+  }
 }
 
-Order --> detectAnomalies : entrada
-detectAnomalies --> stalledInTransit : aplica
-detectAnomalies --> repeatedFailedAttempts : aplica
-detectAnomalies --> routeDeviation : aplica
-detectAnomalies --> predictiveDelayRisk : aplica
-stalledInTransit ..> Anomaly : produz
-repeatedFailedAttempts ..> Anomaly : produz
-routeDeviation ..> Anomaly : produz
-predictiveDelayRisk ..> Anomaly : produz
-detectAnomalies ..> Anomaly : retorna Anomaly[]\nordenado por SEVERITY_WEIGHT
+class AnomalyDetector {
+  -rules: AnomalyRule[]
+  +constructor(rules: AnomalyRule[])
+  +detect(order: Order, now?: Date): Anomaly[]
+}
+
+class NotificationPolicy {
+  -triggerByRule: Map<string, string | null>
+  +constructor(rules: AnomalyRule[])
+  +wasNotified(ruleName, triggers): boolean
+}
+
+class "composition/container.ts" as Root <<composition root>> {
+  ANOMALY_RULES: AnomalyRule[]
+}
+
+AnomalyRule <|.. StalledInTransitRule
+AnomalyRule <|.. RepeatedFailedAttemptsRule
+AnomalyRule <|.. RouteDeviationRule
+AnomalyRule <|.. PredictiveDelayRiskRule
+
+AnomalyDetector o--> "*" AnomalyRule : aplica
+NotificationPolicy o--> "*" AnomalyRule : lê triggerId
+Order --> AnomalyDetector : entrada
+AnomalyDetector ..> Anomaly : retorna Anomaly[]\nordenado por SEVERITY_WEIGHT
+Root ..> AnomalyDetector : instancia com ANOMALY_RULES
+Root ..> NotificationPolicy : instancia com ANOMALY_RULES
+
+note bottom of AnomalyRule
+  Ponto de extensão (OCP): regra nova = nova classe
+  + uma linha em ANOMALY_RULES. Detector, regras
+  existentes e serviços não mudam.
+end note
 @enduml
 ```
 
-![C4 — Código — anomalyRules.ts](docs/diagrams/c4-anomaly-rules.svg)
+![C4 — Código — domain/anomalies](docs/diagrams/c4-anomaly-rules.svg)
 
-Cada regra é uma função pura `(order) => Anomaly | null`, sem estado de tela — testável isolada
-e fácil de mover para o backend depois, que é onde vai rodar de fato.
+Cada regra é uma classe que implementa `AnomalyRule`, sem estado de tela, testável isolada e
+fácil de mover para o backend depois, que é onde vai rodar de fato. Criar uma regra nova é
+escrever mais uma classe e acrescentá-la em `ANOMALY_RULES` no composition root: o detector,
+as regras existentes e os serviços não mudam. A própria regra declara o gatilho (RF05) que
+governa seu aviso, então a central de incidentes também não precisa ser editada.
 
 ## Requisitos funcionais
 
@@ -339,15 +427,15 @@ RF08 não existe: a numeração original salta de RF07 para RF09.
 
 | Requisito | Descrição | Status |
 | --- | --- | --- |
-| RF01 Cadastro de pedidos | Cadastro manual de dados de envio e código de rastreio, com identificação automática da transportadora | Implementado — `lib/carrierDetection.ts`, modal de cadastro |
-| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (simulado) — `services/ordersService.ts`, botão de atualizar na gaveta |
+| RF01 Cadastro de pedidos | Cadastro manual de dados de envio e código de rastreio, com identificação automática da transportadora | Implementado — `domain/carriers/`, modal de cadastro |
+| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (simulado) — `services/simulated/SimulatedOrdersService.ts` + `infrastructure/carriers/SimulatedCarrierGateway.ts`, botão de atualizar na gaveta |
 | RF03 Histórico unificado | Timeline padronizada de eventos de movimentação, independente da transportadora | Implementado — `components/orders/Timeline.tsx` |
-| RF04 Detecção de anomalias / atrasos preditivos | Identificação automática de inconsistências no transporte antes do prazo expirar | Implementado — `lib/anomalyRules.ts` |
+| RF04 Detecção de anomalias / atrasos preditivos | Identificação automática de inconsistências no transporte antes do prazo expirar | Implementado — `domain/anomalies/` |
 | RF05 Gatilhos de notificação | Parametrização de quais eventos e atrasos disparam alerta proativo ao cliente final | Implementado — `components/alerts/TriggerPanel.tsx` |
 | RF06 Painel de alertas operacionais | Central de incidentes | Implementado — `pages/alerts/AlertsPage.tsx` |
 | RF07 Dashboard de desempenho por transportadora | Relatórios comparativos de qualidade de entrega por transportadora e região | Não implementado nesta entrega — desenhado no protótipo, item desabilitado na navegação |
 | RF09 Exportação e filtros analíticos | Filtro de relatórios por período, status, região e transportadora | Não implementado nesta entrega — depende do RF07 |
-| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `contexts/AuthContext.tsx`, `services/authService.ts` |
+| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `domain/permissions.ts`, `contexts/AuthContext.tsx`, `services/simulated/SimulatedAuthService.ts` |
 
 ### RF01 — identificação automática da transportadora
 
@@ -404,7 +492,7 @@ milhares de clientes finais recebem, e isso é decisão de quem responde pela op
 
 | Requisito | Descrição | Situação nesta entrega |
 | --- | --- | --- |
-| RNF01 Arquitetura Cliente-Servidor | Interface web/mobile desacoplada da API central responsável por regras de negócio, persistência e integrações | Já refletido: `services/` isola o frontend de qualquer detalhe de persistência |
+| RNF01 Arquitetura Cliente-Servidor | Interface web/mobile desacoplada da API central responsável por regras de negócio, persistência e integrações | Já refletido: as telas só conhecem `services/contracts.ts`; persistência e mocks ficam atrás de portas em `infrastructure/` |
 | RNF02 Alta disponibilidade com redundância | Uptime de 99,9%, redundância de servidores e monitoramento ativo | Depende do backend — não existe ainda |
 | RNF03 Resiliência e consistência eventual | Fila de mensagens e retry com exponential backoff, priorizando disponibilidade sobre consistência imediata | Simulado parcialmente: latência artificial de 300–600ms em todo serviço antecipa o comportamento assíncrono |
 | RNF04 Desempenho via cache em memória | Cache (Redis) para acelerar a resposta do painel | Depende do backend — não existe ainda |
@@ -445,7 +533,8 @@ valores soltos.
 Registrado aqui porque delimitar o escopo faz parte da entrega.
 
 - **Backend, banco de dados, fila de mensagens e cache** (RNF02, RNF03 e RNF04) — a API real,
-  substituindo a camada de mocks por chamadas HTTP, sem mudar nenhuma tela.
+  com classes `Http*Service` que implementam os contratos de `services/contracts.ts`, trocadas
+  no composition root, sem mudar nenhuma tela.
 - **Tela de Desempenho por transportadora** (RF07 e RF09). Já está desenhada no protótipo,
   com gráficos comparativos, filtros por período e região, e exportação. Aparece desabilitada
   na navegação, marcada como próxima entrega.

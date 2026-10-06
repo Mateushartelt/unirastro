@@ -92,15 +92,17 @@ export interface OrderWithAnomalies extends Order {
  * Anomalias e incidentes (RF04, RF06)
  * ------------------------------------------------------------------ */
 
-export const ANOMALY_RULES = [
-  'Parada prolongada',
-  'Tentativa frustrada',
-  'Rota desviada',
-  'Risco de atraso preditivo',
-  'Webhook indisponível',
-] as const;
+/**
+ * Nome da regra que produziu a anomalia ("Parada prolongada", "Rota desviada"...).
+ *
+ * E texto aberto de proposito (OCP). Antes era uma uniao fechada, e criar uma regra nova
+ * obrigava a editar este arquivo. Agora cada regra declara o proprio nome em
+ * domain/anomalies/rules, e o modelo nao precisa conhecer a lista.
+ */
+export type AnomalyRuleName = string;
 
-export type AnomalyRule = (typeof ANOMALY_RULES)[number];
+/** Tipo dos incidentes de infraestrutura, que nao nascem de nenhuma regra de encomenda. */
+export const SYSTEM_INCIDENT_KIND = 'Webhook indisponível';
 
 export const SEVERITIES = ['Crítico', 'Atenção', 'Info'] as const;
 
@@ -108,7 +110,7 @@ export type Severity = (typeof SEVERITIES)[number];
 
 /** O que uma regra de anomalia produz ao analisar uma encomenda. */
 export interface Anomaly {
-  rule: AnomalyRule;
+  rule: AnomalyRuleName;
   severity: Severity;
   title: string;
   description: string;
@@ -147,7 +149,13 @@ export const ROLES = ['Admin', 'Operador de Logística', 'Suporte'] as const;
 
 export type Role = (typeof ROLES)[number];
 
-export type TenantId = 'tenant-aurora' | 'tenant-bonsai';
+/**
+ * Identificador da empresa cliente.
+ *
+ * Antes era a uniao dos dois tenants dos mocks, o que amarrava o modelo de dominio aos dados
+ * simulados: cadastrar uma empresa nova exigiria editar este arquivo.
+ */
+export type TenantId = string;
 
 export interface Tenant {
   id: TenantId;
@@ -173,10 +181,23 @@ export type Session = Omit<User, 'password'> & { tenantName: string };
 /**
  * Mesmo formato que o quizmaster-api devolve. Manter a simetria significa que trocar o mock
  * por uma chamada HTTP real nao muda como as telas leem a resposta.
+ *
+ * E uma uniao discriminada por `success`. Na versao anterior, uma falha devolvia
+ * `data: null` disfarcado de `T`, e quem lia `data` sem checar `success` quebrava em tempo de
+ * execucao (a AppShell fazia isso). Agora o compilador obriga a checagem.
  */
-export interface ApiResponse<T> {
-  success: boolean;
+export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
+
+export interface ApiSuccess<T> {
+  success: true;
   message: string;
   errors: string[];
   data: T;
+}
+
+export interface ApiFailure {
+  success: false;
+  message: string;
+  errors: string[];
+  data: null;
 }

@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Field } from '../../components/ui/Field';
+import { useServices } from '../../composition/servicesContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEMO_CREDENTIALS } from '../../mocks/users';
 import styles from './LoginPage.module.css';
 
 /**
@@ -14,10 +14,12 @@ import styles from './LoginPage.module.css';
  * ocupando metade da tela.
  *
  * As credenciais de teste ficam visiveis na propria pagina. Numa entrega academica isso vale
- * mais do que esconde-las: quem avalia entra sem pedir ajuda.
+ * mais do que esconde-las: quem avalia entra sem pedir ajuda. Elas chegam pelo contrato
+ * IDemoAccounts; antes esta pagina importava mocks/users.ts direto.
  */
 export function LoginPage() {
   const { session, signIn } = useAuth();
+  const { demoAccounts } = useServices();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -113,7 +115,7 @@ export function LoginPage() {
           <div className={styles.demo}>
             <p className={styles.demoTitle}>Contas de demonstração</p>
             <ul className={styles.demoList}>
-              {DEMO_CREDENTIALS.map((c) => (
+              {demoAccounts.list().map((c) => (
                 <li key={c.email}>
                   <button
                     type="button"
