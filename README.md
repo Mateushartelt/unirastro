@@ -1,14 +1,15 @@
 # UNIRASTRO — Painel operacional
 
-Frontend do UNIRASTRO, um SaaS multi-tenant de rastreamento de encomendas.
+Frontend e API do UNIRASTRO, um SaaS multi-tenant de rastreamento de encomendas.
 
 A proposta não é mostrar onde o pacote está, porque o site da transportadora já faz isso. É
 perceber que algo saiu do previsto **antes** do prazo estourar, para que a empresa avise o
 cliente final em vez de ser cobrada por ele.
 
-Esta é a entrega parcial de frontend (cerca de 35% do previsto). O backend não existe ainda:
-os dados vêm de mocks locais atrás de uma camada de serviços preparada para ser trocada por
-chamadas HTTP.
+Esta é a entrega parcial com **cerca de 70% do previsto**: a Aplicação Web (React/Vite) e a
+**API Backend (Node/Express, em [`backend/`](backend/))** funcionando juntas. A API ainda
+guarda os dados em memória; banco, fila, cache e worker ficam para a próxima etapa (ver
+[Próximas etapas](#próximas-etapas)).
 
 ## Objetivo do produto
 
@@ -38,10 +39,22 @@ nesta entrega — ver [Próximas etapas](#próximas-etapas).
 
 ```bash
 npm install
+npm --prefix backend install
+npm run dev:all
+```
+
+Sobe a API em `http://localhost:3333/api` e o painel em `http://localhost:5173`, já
+configurado (`VITE_API_URL=/api`) para falar com a API real pelo proxy do Vite.
+
+Para rodar só o frontend, com o backend simulado em memória (sem API):
+
+```bash
 npm run dev
 ```
 
-A aplicação sobe em `http://localhost:5173`.
+A escolha entre API real e backend simulado é feita só no composition root
+(`src/composition/container.ts`), pela variável `VITE_API_URL` (ver `.env.example`). Nenhuma
+tela muda.
 
 ### Credenciais de teste
 
@@ -65,13 +78,20 @@ npm run typecheck   # checagem de tipos
 npm run build       # build de produção
 npm run lint        # análise estática
 npm run arch        # confere se os imports respeitam as camadas do C3
+npm run test:api    # testes da API (integração HTTP + unidade)
+npm --prefix backend run typecheck
+npm --prefix backend run arch   # camadas do C3 da API
 ```
 
 ## Arquitetura
 
-O padrão é **Cliente-Servidor** (RNF01). O frontend não conhece regra de persistência, e o
-backend não conhece tela. Nesta entrega o servidor é simulado, mas a fronteira já está no
-lugar certo.
+O padrão arquitetural é **Cliente-Servidor** (RNF01). O frontend não conhece regra de
+persistência, e o backend não conhece tela. A fronteira são os contratos de
+`src/services/contracts.ts`: o frontend fala com a API Express por classes `Http*Service`, ou
+com o backend simulado por classes `Simulated*Service`, e as telas não sabem qual.
+
+O padrão de projeto central é o **Strategy**, aplicado nas regras de anomalia (RF04) — ver
+[Padrão de projeto: Strategy](#padrão-de-projeto-strategy).
 
 Dentro do frontend o código segue os princípios **SOLID**, organizado em camadas:
 
@@ -82,6 +102,7 @@ src/
   services/
     contracts.ts    interfaces da fronteira com o backend (o que as telas enxergam)
     simulated/      backend simulado: implementa os contratos e declara as portas
+    http/           cliente da API real: Http*Service implementam os mesmos contratos
   infrastructure/   adaptadores das portas (memória, localStorage, transportadora simulada)
   composition/      composition root: monta as dependências e injeta na árvore do React
   mocks/            dados simulados (semente dos repositórios)
@@ -90,13 +111,25 @@ src/
   components/       layout, interface e componentes por área
   lib/              formatação de apresentação
   pages/            telas, agrupadas por área
+
+backend/src/        API Express (mesmas camadas do C3 do container API Backend)
+  http/             app Express, envelope de resposta, token JWT, autenticação/autorização
+  controllers/      traduzem HTTP <-> caso de uso (status, corpo, tenant do token)
+  application/      serviços de aplicação: só orquestram domínio + portas
+  repositories/     ports.ts + repositórios em memória (PostgreSQL na próxima etapa)
+  integrations/     transportadora simulada, publicador de alertas
+  composition/      composition root da API
 ```
+
+O backend **não copia** as regras de negócio: importa o mesmo `src/domain/` que o frontend
+usa (anomalias, transportadoras, cadastro, incidentes, permissões). O domínio é puro — não
+conhece React, Express nem armazenamento — e o `npm run arch` garante isso.
 
 A regra que sustenta a separação: **telas e contextos só conhecem as interfaces de
 `services/contracts.ts`**, recebidas por `useServices()`. Quem escolhe a implementação é o
 composition root (`composition/container.ts`), o único arquivo que instancia classes
 concretas. Quando o backend existir, entram classes `Http*Service` que implementam os mesmos
-contratos, a troca acontece só no composition root, e nenhuma tela muda. O comando
+contratos — já existem, em `services/http/` —, a troca acontece só no composition root, e nenhuma tela muda. O comando
 `npm run arch` confere automaticamente que nenhum import fura essas camadas.
 
 O relatório completo da refatoração (o que é cada princípio, as infrações encontradas e o
@@ -108,7 +141,7 @@ mexe em como as telas leem a resposta.
 
 Duas decisões que valem explicação:
 
-**Latência artificial.** Todo serviço espera de 300 a 600 ms antes de responder. Uma tela que
+**Latência artificial (backend simulado).** Todo serviço simulado espera de 300 a 600 ms antes de responder. Uma tela que
 nunca espera esconde exatamente os defeitos que aparecem quando o backend entra. O RNF03 fala
 em consistência eventual, então esperar é o comportamento normal, não a exceção.
 
@@ -132,13 +165,21 @@ O detalhamento por container está no [Modelo C4](#modelo-c4) a seguir.
 | Estilo | CSS Modules + `src/styles/tokens.css` | escopo por componente sem runtime de CSS-in-JS; tokens centralizados de cor, tipografia e espaçamento |
 | Tipografia | Sora, IBM Plex Sans, IBM Plex Mono (Google Fonts) | títulos, corpo, e números/códigos de rastreio, respectivamente |
 
-### Planejado para o backend (ainda não implementado)
+### Backend (em uso nesta entrega)
+
+| Camada | Ferramenta | Motivo |
+| --- | --- | --- |
+| API | Node.js 22 + Express 5 + TypeScript | mesma linguagem do frontend; o backend reaproveita `src/domain/` sem copiar regra |
+| Execução | tsx | roda TypeScript direto, sem etapa de build no desenvolvimento |
+| Autenticação | JWT HS256 (`node:crypto`) | o tenant e o papel vêm do token assinado, não do cliente (RF10) |
+| Testes | `node:test` | integração HTTP de verdade e unidade com dublês nas portas, sem dependência extra |
+
+### Planejado para o backend (próxima etapa)
 
 Vem do C2 do modelo C4 e dos requisitos não funcionais:
 
 | Camada | Ferramenta | Motivo |
 | --- | --- | --- |
-| API | Node.js / Express | mesma linguagem do frontend, reduz custo de contexto ao trocar mock por chamada real |
 | Banco de dados | PostgreSQL / MariaDB | dados relacionais — pedidos, eventos, tenants, usuários — com integridade referencial |
 | Fila de mensagens | RabbitMQ / Kafka | desacopla a consulta às transportadoras do resto do sistema (RNF03) |
 | Cache | Redis | acelera a leitura do painel e de dados consultados com frequência (RNF04) |
@@ -216,8 +257,8 @@ SHOW_LEGEND()
 ![C2 — Diagrama de Containers](docs/diagrams/c2-containers.svg)
 
 Web, Backend, Banco, Fila, Worker e Cache são o C2 completo previsto no documento de
-requisitos. Apenas a **Aplicação Web** está implementada nesta entrega — os demais containers
-são a estrutura planejada para o backend (ver [Ferramentas e tecnologias](#ferramentas-e-tecnologias)
+requisitos. **Aplicação Web** e **API Backend** estão implementadas nesta entrega (a API com
+dados em memória) — Banco, Fila, Worker e Cache são a estrutura planejada (ver [Ferramentas e tecnologias](#ferramentas-e-tecnologias)
 e [Próximas etapas](#próximas-etapas)).
 
 ### C3 — Componentes
@@ -322,25 +363,32 @@ Como ler o diagrama:
 - `DataContext` não busca dado nenhum: só guarda uma versão que o `useServiceQuery` observa
   para saber quando reconsultar o serviço depois de uma mutação (ex.: resolver um incidente).
 
-Zoom no container **API Backend** (planejado — ainda não existe código, é a estrutura em
-camadas prevista para quando ele for escrito):
+Zoom no container **API Backend** (implementado, em `backend/src/`):
 
 ```plantuml
 @startuml C3-APIBackend
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-title C3 — Componentes da API Backend (planejado, sem código ainda)
+title C3 — Componentes da API Backend (implementado)
 
-Container_Boundary(api, "API Backend (planejado)") {
-  Component(routes, "Rotas / Controllers", "Express")
-  Component(appsvc, "Serviços de aplicação", "regras de negócio")
-  Component(repo, "Repositórios", "acesso a dados")
-  Component(integr, "Integrações", "fila, cache, transportadoras")
+Container_Boundary(api, "API Backend (Node / Express)") {
+  Component(httpc, "HTTP", "http/", "App Express, authMiddleware (JWT), envelope { success, message, errors, data }")
+  Component(routes, "Controllers", "controllers/", "Auth, Orders, Incidents, Triggers, Workers")
+  Component(appsvc, "Serviços de aplicação", "application/", "OrdersService, IncidentsService, AuthService, TriggersService, WorkerStatusService")
+  Component(domain, "Domínio", "src/domain/ (compartilhado com a Aplicação Web)", "AnomalyDetector + AnomalyRule, CarrierDetector, NotificationPolicy, newOrder, permissions")
+  Component(ports, "Portas", "repositories/ports.ts", "IOrderRepository, ITriggerRepository, ..., ICarrierTrackingGateway, IAlertPublisher")
+  Component(repo, "Repositórios", "repositories/", "InMemory*Repository (PostgreSQL na próxima etapa)")
+  Component(integr, "Integrações", "integrations/", "SimulatedCarrierGateway, ConsoleAlertPublisher")
+  Component(root, "Composition root", "composition/container.ts", "Instancia tudo e registra ANOMALY_RULES")
 }
 
+Rel(httpc, routes, "roteia")
 Rel(routes, appsvc, "chama")
-Rel(appsvc, repo, "usa")
-Rel(appsvc, integr, "usa")
+Rel(appsvc, domain, "usa")
+Rel(appsvc, ports, "depende de")
+Rel(repo, ports, "implementa")
+Rel(integr, ports, "implementa")
+Rel(root, httpc, "monta")
 @enduml
 ```
 
@@ -421,6 +469,164 @@ escrever mais uma classe e acrescentá-la em `ANOMALY_RULES` no composition root
 as regras existentes e os serviços não mudam. A própria regra declara o gatilho (RF05) que
 governa seu aviso, então a central de incidentes também não precisa ser editada.
 
+## Diagramas de sequência
+
+Os dois fluxos que atravessam os dois containers, com os nomes reais das classes. Fonte
+PlantUML abaixo de cada SVG.
+
+### Cadastro de encomenda (RF01)
+
+![Sequência — Cadastro de encomenda](docs/diagrams/seq-cadastro-encomenda.svg)
+
+<details>
+<summary>Fonte PlantUML</summary>
+
+```plantuml
+@startuml seq-cadastro-encomenda
+title Sequência — Cadastro de encomenda (RF01)
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam ParticipantPadding 6
+skinparam BoxPadding 8
+
+actor "Usuário" as U
+
+box "Aplicação Web (React / Vite)" #EEF4FC
+  participant "NewOrderModal\n+ OrdersPage" as UI
+  participant "IOrdersService\n«HttpOrdersService»" as HS
+end box
+
+box "API Backend (Node / Express)" #FDF3E7
+  participant "authMiddleware" as MW
+  participant "OrdersController" as C
+  participant "OrdersService" as S
+  participant "Domínio\n(src/domain)" as D
+  participant "IOrderRepository" as R
+  participant "ICarrierTracking\nGateway" as G
+  participant "IAlertPublisher" as A
+end box
+
+U -> UI : informa código, destinatário e cidade
+UI -> UI : carrierDetection.detect(código)\n«feedback instantâneo»
+UI -> HS : create(tenantId, dados)
+HS -> MW : POST /api/encomendas\nAuthorization: Bearer <token>
+MW -> MW : verify(token) → tenantId, papel
+MW -> MW : authorize('createOrders')
+MW -> C : create(req, res)
+C -> S : create(tenantId, input)
+S -> D : CarrierDetector.detect(código)
+S -> R : findByCode(tenantId, código)
+R --> S : null (não duplicado)
+S -> D : validateNewOrder(...)
+alt cadastro inválido
+  S --> C : failure('invalid')
+  C --> HS : 400 Bad Request
+  HS --> UI : ApiFailure
+  UI --> U : mensagem de erro no formulário
+else cadastro válido
+  S -> D : buildNewOrder(...)
+  S -> G : fetchUpdate(encomenda)
+  G --> S : evento "Objeto postado"
+  S -> D : AnomalyDetector.detect(encomenda)
+  loop para cada AnomalyRule «Strategy»
+    D -> D : rule.evaluate(encomenda, agora)
+  end
+  D --> S : anomalias[]
+  S -> R : add(encomenda)
+  opt anomalia detectada e gatilho ativo (NotificationPolicy)
+    S -> A : publish(encomenda, anomalias)
+  end
+  S --> C : success(encomenda)
+  C --> HS : 201 Created\n{ success, message, errors, data }
+  HS --> UI : ApiSuccess<OrderWithAnomalies>
+  UI --> U : toast + lista atualizada
+end
+@enduml
+```
+
+</details>
+
+### Login e isolamento multi-tenant (RF10)
+
+![Sequência — Login e isolamento multi-tenant](docs/diagrams/seq-login-tenant.svg)
+
+<details>
+<summary>Fonte PlantUML</summary>
+
+```plantuml
+@startuml seq-login-tenant
+title Sequência — Login e isolamento multi-tenant (RF10)
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam BoxPadding 8
+
+actor "Usuário" as U
+
+box "Aplicação Web (React / Vite)" #EEF4FC
+  participant "LoginPage\n+ AuthContext" as UI
+  participant "IAuthService\n«HttpAuthService»" as AS
+  participant "ICredentialStore" as CS
+end box
+
+box "API Backend (Node / Express)" #FDF3E7
+  participant "AuthController" as AC
+  participant "AuthService" as S
+  participant "IUserDirectory" as UD
+  participant "TokenSigner" as T
+  participant "OrdersController\n→ OrdersService" as OC
+  participant "IOrderRepository" as R
+end box
+
+U -> UI : e-mail e senha
+UI -> AS : login(email, senha)
+AS -> AC : POST /api/auth/login
+AC -> S : login(email, senha)
+S -> UD : findByEmail(email)
+UD --> S : usuário
+alt senha incorreta
+  S --> AC : failure('unauthorized')
+  AC --> AS : 401 "Credenciais inválidas."
+else senha correta
+  S --> AC : success(sessão)
+  AC -> T : sign({ userId, tenantId, role })
+  T --> AC : token (JWT HS256)
+  AC --> AS : 200 { session, token }
+  AS -> CS : save({ session, token })
+  AS --> UI : ApiSuccess<Session>
+end
+
+== Requisições seguintes ==
+UI -> AS : (via HttpClient) GET /api/encomendas\nAuthorization: Bearer <token>
+AS -> OC : authMiddleware: verify(token) → tenantId
+note right of OC : o tenant vem do token assinado,\nnunca de parâmetro do cliente
+OC -> R : listByTenant(tenantId)
+R --> OC : só encomendas da empresa
+OC --> UI : 200 [encomendas]
+@enduml
+```
+
+</details>
+
+## Padrão de projeto: Strategy
+
+O **Strategy** define uma família de algoritmos, encapsula cada um numa classe e os torna
+intercambiáveis. No UNIRASTRO a família são as **regras de anomalia** (RF04):
+
+| Papel no padrão | No código |
+| --- | --- |
+| Strategy (interface) | `AnomalyRule` — `src/domain/anomalies/AnomalyRule.ts` |
+| Estratégias concretas | `StalledInTransitRule`, `RepeatedFailedAttemptsRule`, `RouteDeviationRule`, `PredictiveDelayRiskRule` — `src/domain/anomalies/rules/` |
+| Context | `AnomalyDetector` — recebe as regras no construtor e executa `rule.evaluate(order, now)` em cada uma |
+| Quem escolhe as estratégias | `ANOMALY_RULES` no composition root (`src/composition/container.ts` e `backend/src/composition/container.ts`) |
+
+Por que Strategy aqui: o produto vive de regras de anomalia, e elas vão crescer. Com o padrão,
+uma regra nova é uma classe nova mais uma linha em `ANOMALY_RULES` — o detector, as outras
+regras, os serviços e as telas não mudam (OCP). A mesma família de estratégias roda no
+frontend e na API, porque o domínio é compartilhado. O diagrama de classes está no
+[C4 — Código](#c4--código).
+
 ## Requisitos funcionais
 
 RF08 não existe: a numeração original salta de RF07 para RF09.
@@ -428,14 +634,14 @@ RF08 não existe: a numeração original salta de RF07 para RF09.
 | Requisito | Descrição | Status |
 | --- | --- | --- |
 | RF01 Cadastro de pedidos | Cadastro manual de dados de envio e código de rastreio, com identificação automática da transportadora | Implementado — `domain/carriers/`, modal de cadastro |
-| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (simulado) — `services/simulated/SimulatedOrdersService.ts` + `infrastructure/carriers/SimulatedCarrierGateway.ts`, botão de atualizar na gaveta |
+| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (transportadora simulada) — API: `POST /api/encomendas/:code/consultar` → `backend/src/application/OrdersService.ts` + `backend/src/integrations/SimulatedCarrierGateway.ts`; botão de atualizar na gaveta |
 | RF03 Histórico unificado | Timeline padronizada de eventos de movimentação, independente da transportadora | Implementado — `components/orders/Timeline.tsx` |
 | RF04 Detecção de anomalias / atrasos preditivos | Identificação automática de inconsistências no transporte antes do prazo expirar | Implementado — `domain/anomalies/` |
 | RF05 Gatilhos de notificação | Parametrização de quais eventos e atrasos disparam alerta proativo ao cliente final | Implementado — `components/alerts/TriggerPanel.tsx` |
 | RF06 Painel de alertas operacionais | Central de incidentes | Implementado — `pages/alerts/AlertsPage.tsx` |
 | RF07 Dashboard de desempenho por transportadora | Relatórios comparativos de qualidade de entrega por transportadora e região | Não implementado nesta entrega — desenhado no protótipo, item desabilitado na navegação |
 | RF09 Exportação e filtros analíticos | Filtro de relatórios por período, status, região e transportadora | Não implementado nesta entrega — depende do RF07 |
-| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `domain/permissions.ts`, `contexts/AuthContext.tsx`, `services/simulated/SimulatedAuthService.ts` |
+| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `domain/permissions.ts` aplicada nas telas e na API (`authorize` → 403); tenant lido do token JWT em `backend/src/http/authMiddleware.ts` |
 
 ### RF01 — identificação automática da transportadora
 
@@ -492,10 +698,10 @@ milhares de clientes finais recebem, e isso é decisão de quem responde pela op
 
 | Requisito | Descrição | Situação nesta entrega |
 | --- | --- | --- |
-| RNF01 Arquitetura Cliente-Servidor | Interface web/mobile desacoplada da API central responsável por regras de negócio, persistência e integrações | Já refletido: as telas só conhecem `services/contracts.ts`; persistência e mocks ficam atrás de portas em `infrastructure/` |
-| RNF02 Alta disponibilidade com redundância | Uptime de 99,9%, redundância de servidores e monitoramento ativo | Depende do backend — não existe ainda |
-| RNF03 Resiliência e consistência eventual | Fila de mensagens e retry com exponential backoff, priorizando disponibilidade sobre consistência imediata | Simulado parcialmente: latência artificial de 300–600ms em todo serviço antecipa o comportamento assíncrono |
-| RNF04 Desempenho via cache em memória | Cache (Redis) para acelerar a resposta do painel | Depende do backend — não existe ainda |
+| RNF01 Arquitetura Cliente-Servidor | Interface web/mobile desacoplada da API central responsável por regras de negócio, persistência e integrações | Implementado: Aplicação Web e API Express separadas, falando REST/JSON; as telas só conhecem `services/contracts.ts` |
+| RNF02 Alta disponibilidade com redundância | Uptime de 99,9%, redundância de servidores e monitoramento ativo | Depende de infraestrutura de produção — próxima etapa |
+| RNF03 Resiliência e consistência eventual | Fila de mensagens e retry com exponential backoff, priorizando disponibilidade sobre consistência imediata | Parcial: o cliente HTTP trata falha de rede como resposta de erro, sem quebrar a tela; fila e retry ficam para a próxima etapa |
+| RNF04 Desempenho via cache em memória | Cache (Redis) para acelerar a resposta do painel | Próxima etapa (Redis) |
 
 ## Dados simulados
 
@@ -503,8 +709,9 @@ Os dados são ancorados no momento em que a aplicação carrega, nunca em datas 
 encomenda parada continua parada há 52 horas em qualquer dia que o projeto for apresentado, e
 as regras disparam de verdade em vez de ler um campo pronto.
 
-Recarregar a página devolve tudo ao estado inicial. Para uma entrega de frontend isso é
-aceitável, e até conveniente numa apresentação.
+Com a API, os dados vivem na memória do processo: recarregar a página mantém o que foi
+cadastrado, e reiniciar a API volta tudo ao estado inicial. No backend simulado, recarregar a
+página já volta ao estado inicial. Nos dois casos é conveniente numa apresentação.
 
 Os casos foram escolhidos de propósito: uma parada longa, duas tentativas frustradas, um
 desvio de rota, entregas normais e uma recém postada. Sem essa variedade a central de
@@ -532,13 +739,12 @@ valores soltos.
 
 Registrado aqui porque delimitar o escopo faz parte da entrega.
 
-- **Backend, banco de dados, fila de mensagens e cache** (RNF02, RNF03 e RNF04) — a API real,
-  com classes `Http*Service` que implementam os contratos de `services/contracts.ts`, trocadas
-  no composition root, sem mudar nenhuma tela.
+- **Banco de dados, fila de mensagens, cache e worker** (RNF02, RNF03 e RNF04) — a API já
+  existe; falta trocar os repositórios em memória por PostgreSQL (novas classes que
+  implementam `backend/src/repositories/ports.ts`) e mover a consulta às transportadoras para
+  um worker assíncrono.
 - **Tela de Desempenho por transportadora** (RF07 e RF09). Já está desenhada no protótipo,
   com gráficos comparativos, filtros por período e região, e exportação. Aparece desabilitada
   na navegação, marcada como próxima entrega.
-- **C3 e C4 do container API Backend.** O C3/C4 da Aplicação Web já está no modelo; o do
-  backend é só a estrutura em camadas prevista, porque o código ainda não existe.
 - **Integração real com APIs de transportadoras.**
-- **Testes automatizados.**
+- **Testes automatizados no frontend.** A API já tem testes (`npm run test:api`).

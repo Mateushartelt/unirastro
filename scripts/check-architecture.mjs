@@ -15,6 +15,7 @@ const SRC = resolve(dirname(new URL(import.meta.url).pathname), '..', 'src');
 function layerOf(file) {
   const rel = relative(SRC, file).replaceAll('\\', '/');
   if (rel.startsWith('services/simulated/')) return 'simulated';
+  if (rel.startsWith('services/http/')) return 'http';
   if (rel.startsWith('services/')) return 'contracts';
   const top = rel.split('/')[0];
   if (['pages', 'components', 'contexts', 'hooks'].includes(top)) return 'ui';
@@ -32,9 +33,10 @@ const ALLOWED = {
   domain: ['types', 'domain'],
   contracts: ['types', 'contracts', 'domain'],
   simulated: ['types', 'domain', 'contracts', 'simulated'],
-  infrastructure: ['types', 'contracts', 'simulated', 'infrastructure'],
+  http: ['types', 'domain', 'contracts', 'http'],
+  infrastructure: ['types', 'contracts', 'simulated', 'http', 'infrastructure'],
   mocks: ['types', 'mocks'],
-  composition: ['types', 'domain', 'contracts', 'simulated', 'infrastructure', 'mocks', 'composition'],
+  composition: ['types', 'domain', 'contracts', 'simulated', 'http', 'infrastructure', 'mocks', 'composition'],
   ui: ['types', 'domain', 'contracts', 'ui', 'composition'],
   entry: ['ui', 'composition', 'types', 'entry', 'styles'],
 };
@@ -42,8 +44,8 @@ const ALLOWED = {
 /** A interface so pode usar do composition root o contexto de servicos, nunca o container. */
 const UI_COMPOSITION_ALLOWED = ['composition/servicesContext.ts', 'composition/ServicesProvider.tsx'];
 
-/** Da infraestrutura, a camada `simulated` so pode ser usada pelas portas. */
-const INFRA_SIMULATED_ALLOWED = ['services/simulated/ports.ts'];
+/** Da infraestrutura, as camadas `simulated` e `http` so podem ser usadas pelas portas. */
+const INFRA_SIMULATED_ALLOWED = ['services/simulated/ports.ts', 'services/http/ports.ts'];
 
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
@@ -85,7 +87,7 @@ for (const file of walk(SRC)) {
     if (ok && layer === 'ui' && targetLayer === 'composition') {
       ok = UI_COMPOSITION_ALLOWED.includes(targetRel);
     }
-    if (ok && layer === 'infrastructure' && targetLayer === 'simulated') {
+    if (ok && layer === 'infrastructure' && (targetLayer === 'simulated' || targetLayer === 'http')) {
       ok = INFRA_SIMULATED_ALLOWED.includes(targetRel);
     }
     // servicesContext so pode importar o TIPO AppServices do container.

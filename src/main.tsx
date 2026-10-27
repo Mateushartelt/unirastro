@@ -11,7 +11,7 @@ if (!container) {
 }
 
 // Ponto de entrada: as dependencias sao montadas uma unica vez, aqui, e entregues a arvore.
-const services = createServices();
+const services = await createServices();
 
 createRoot(container).render(
   <StrictMode>
