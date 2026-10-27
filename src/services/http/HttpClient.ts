@@ -12,14 +12,30 @@ import type { ICredentialStore } from './ports';
 export class HttpClient {
   private readonly baseUrl: string;
   private readonly credentials: ICredentialStore;
+  /** GETs em andamento, por caminho e token. */
+  private readonly inFlight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   constructor(baseUrl: string, credentials: ICredentialStore) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
     this.credentials = credentials;
   }
 
-  get<T>(path: string): Promise<ApiResponse<T>> {
-    return this.request<T>('GET', path);
+  /**
+   * GET idêntico pedido enquanto outro ainda está em andamento reaproveita a mesma requisição.
+   * Acontece quando a tela monta duas vezes (StrictMode do React em desenvolvimento) ou quando
+   * duas partes da tela pedem o mesmo dado ao mesmo tempo (barra lateral e página de alertas).
+   * Cada chamador recebe sua própria cópia, para um não alterar o objeto do outro.
+   */
+  async get<T>(path: string): Promise<ApiResponse<T>> {
+    const key = `${this.credentials.load()?.token ?? ''} ${path}`;
+
+    let pending = this.inFlight.get(key);
+    if (!pending) {
+      pending = this.request<unknown>('GET', path).finally(() => this.inFlight.delete(key));
+      this.inFlight.set(key, pending);
+    }
+
+    return structuredClone(await pending) as ApiResponse<T>;
   }
 
   post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
