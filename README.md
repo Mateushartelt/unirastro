@@ -7,7 +7,7 @@ perceber que algo saiu do previsto **antes** do prazo estourar, para que a empre
 cliente final em vez de ser cobrada por ele.
 
 Esta é a entrega parcial com **cerca de 70% do previsto**: a Aplicação Web (React/Vite) e a
-**API Backend (Node/Express, em [`backend/`](backend/))** funcionando juntas. A API ainda
+**API Backend (Node/Express, no repositório [unirastro-api](https://github.com/Mateushartelt/unirastro-api))** funcionando juntas. A API ainda
 guarda os dados em memória; banco, fila, cache e worker ficam para a próxima etapa (ver
 [Próximas etapas](#próximas-etapas)).
 
@@ -37,13 +37,23 @@ nesta entrega — ver [Próximas etapas](#próximas-etapas).
 
 ## Como rodar
 
+A API fica em outro repositório, [unirastro-api](https://github.com/Mateushartelt/unirastro-api). Clone os dois lado a lado e, em dois terminais:
+
 ```bash
-npm install
-npm --prefix backend install
-npm run dev:all
+git clone git@github.com:Mateushartelt/unirastro-api.git ../unirastro-api
 ```
 
-Sobe a API em `http://localhost:3333/api` e o painel em `http://localhost:5173`, já
+```bash
+npm --prefix ../unirastro-api install
+npm --prefix ../unirastro-api run dev
+```
+
+```bash
+npm install
+npm run dev:api
+```
+
+A API sobe em `http://localhost:3333/api` e o painel em `http://localhost:5173`, já
 configurado (`VITE_API_URL=/api`) para falar com a API real pelo proxy do Vite.
 
 Para rodar só o frontend, com o backend simulado em memória (sem API):
@@ -78,10 +88,10 @@ npm run typecheck   # checagem de tipos
 npm run build       # build de produção
 npm run lint        # análise estática
 npm run arch        # confere se os imports respeitam as camadas do C3
-npm run test:api    # testes da API (integração HTTP + unidade)
-npm --prefix backend run typecheck
-npm --prefix backend run arch   # camadas do C3 da API
 ```
+
+Os comandos da API (`npm test`, `npm run typecheck`, `npm run arch`) estão no README do
+repositório dela.
 
 ## Arquitetura
 
@@ -112,7 +122,7 @@ src/
   lib/              formatação de apresentação
   pages/            telas, agrupadas por área
 
-backend/src/        API Express (mesmas camadas do C3 do container API Backend)
+unirastro-api/src/  API Express, em repositório próprio (camadas do C3 do container API Backend)
   http/             app Express, envelope de resposta, token JWT, autenticação/autorização
   controllers/      traduzem HTTP <-> caso de uso (status, corpo, tenant do token)
   application/      serviços de aplicação: só orquestram domínio + portas
@@ -121,9 +131,11 @@ backend/src/        API Express (mesmas camadas do C3 do container API Backend)
   composition/      composition root da API
 ```
 
-O backend **não copia** as regras de negócio: importa o mesmo `src/domain/` que o frontend
-usa (anomalias, transportadoras, cadastro, incidentes, permissões). O domínio é puro — não
-conhece React, Express nem armazenamento — e o `npm run arch` garante isso.
+A API tem a sua própria cópia de `domain/` e `types/`, com as mesmas regras do frontend
+(anomalias, transportadoras, cadastro, incidentes, permissões): o painel mostra e a API aplica
+as mesmas regras. Como são dois repositórios, uma regra alterada precisa ser alterada nos dois.
+O domínio é puro — não conhece React, Express nem armazenamento — e o `npm run arch` de cada
+repositório garante isso.
 
 A regra que sustenta a separação: **telas e contextos só conhecem as interfaces de
 `services/contracts.ts`**, recebidas por `useServices()`. Quem escolhe a implementação é o
@@ -169,7 +181,7 @@ O detalhamento por container está no [Modelo C4](#modelo-c4) a seguir.
 
 | Camada | Ferramenta | Motivo |
 | --- | --- | --- |
-| API | Node.js 22 + Express 5 + TypeScript | mesma linguagem do frontend; o backend reaproveita `src/domain/` sem copiar regra |
+| API | Node.js 22 + Express 5 + TypeScript | mesma linguagem do frontend; as regras de domínio são as mesmas — repositório [unirastro-api](https://github.com/Mateushartelt/unirastro-api) |
 | Execução | tsx | roda TypeScript direto, sem etapa de build no desenvolvimento |
 | Autenticação | JWT HS256 (`node:crypto`) | o tenant e o papel vêm do token assinado, não do cliente (RF10) |
 | Testes | `node:test` | integração HTTP de verdade e unidade com dublês nas portas, sem dependência extra |
@@ -363,7 +375,7 @@ Como ler o diagrama:
 - `DataContext` não busca dado nenhum: só guarda uma versão que o `useServiceQuery` observa
   para saber quando reconsultar o serviço depois de uma mutação (ex.: resolver um incidente).
 
-Zoom no container **API Backend** (implementado, em `backend/src/`):
+Zoom no container **API Backend** (implementado, no repositório [unirastro-api](https://github.com/Mateushartelt/unirastro-api)):
 
 ```plantuml
 @startuml C3-APIBackend
@@ -375,7 +387,7 @@ Container_Boundary(api, "API Backend (Node / Express)") {
   Component(httpc, "HTTP", "http/", "App Express, authMiddleware (JWT), envelope { success, message, errors, data }")
   Component(routes, "Controllers", "controllers/", "Auth, Orders, Incidents, Triggers, Workers")
   Component(appsvc, "Serviços de aplicação", "application/", "OrdersService, IncidentsService, AuthService, TriggersService, WorkerStatusService")
-  Component(domain, "Domínio", "src/domain/ (compartilhado com a Aplicação Web)", "AnomalyDetector + AnomalyRule, CarrierDetector, NotificationPolicy, newOrder, permissions")
+  Component(domain, "Domínio", "domain/ (mesmas regras da Aplicação Web)", "AnomalyDetector + AnomalyRule, CarrierDetector, NotificationPolicy, newOrder, permissions")
   Component(ports, "Portas", "repositories/ports.ts", "IOrderRepository, ITriggerRepository, ..., ICarrierTrackingGateway, IAlertPublisher")
   Component(repo, "Repositórios", "repositories/", "InMemory*Repository (PostgreSQL na próxima etapa)")
   Component(integr, "Integrações", "integrations/", "SimulatedCarrierGateway, ConsoleAlertPublisher")
@@ -619,12 +631,12 @@ intercambiáveis. No UNIRASTRO a família são as **regras de anomalia** (RF04):
 | Strategy (interface) | `AnomalyRule` — `src/domain/anomalies/AnomalyRule.ts` |
 | Estratégias concretas | `StalledInTransitRule`, `RepeatedFailedAttemptsRule`, `RouteDeviationRule`, `PredictiveDelayRiskRule` — `src/domain/anomalies/rules/` |
 | Context | `AnomalyDetector` — recebe as regras no construtor e executa `rule.evaluate(order, now)` em cada uma |
-| Quem escolhe as estratégias | `ANOMALY_RULES` no composition root (`src/composition/container.ts` e `backend/src/composition/container.ts`) |
+| Quem escolhe as estratégias | `ANOMALY_RULES` no composition root (`src/composition/container.ts` aqui e `src/composition/container.ts` na API) |
 
 Por que Strategy aqui: o produto vive de regras de anomalia, e elas vão crescer. Com o padrão,
 uma regra nova é uma classe nova mais uma linha em `ANOMALY_RULES` — o detector, as outras
 regras, os serviços e as telas não mudam (OCP). A mesma família de estratégias roda no
-frontend e na API, porque o domínio é compartilhado. O diagrama de classes está no
+frontend e na API, com as mesmas regras nos dois repositórios. O diagrama de classes está no
 [C4 — Código](#c4--código).
 
 ## Requisitos funcionais
@@ -634,14 +646,14 @@ RF08 não existe: a numeração original salta de RF07 para RF09.
 | Requisito | Descrição | Status |
 | --- | --- | --- |
 | RF01 Cadastro de pedidos | Cadastro manual de dados de envio e código de rastreio, com identificação automática da transportadora | Implementado — `domain/carriers/`, modal de cadastro |
-| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (transportadora simulada) — API: `POST /api/encomendas/:code/consultar` → `backend/src/application/OrdersService.ts` + `backend/src/integrations/SimulatedCarrierGateway.ts`; botão de atualizar na gaveta |
+| RF02 Consulta automática de status | Consulta periódica e assíncrona do status junto às APIs das transportadoras (ou via webhook) | Implementado (transportadora simulada) — API: `POST /api/encomendas/:code/consultar` → `OrdersService` + `SimulatedCarrierGateway` da API; botão de atualizar na gaveta |
 | RF03 Histórico unificado | Timeline padronizada de eventos de movimentação, independente da transportadora | Implementado — `components/orders/Timeline.tsx` |
 | RF04 Detecção de anomalias / atrasos preditivos | Identificação automática de inconsistências no transporte antes do prazo expirar | Implementado — `domain/anomalies/` |
 | RF05 Gatilhos de notificação | Parametrização de quais eventos e atrasos disparam alerta proativo ao cliente final | Implementado — `components/alerts/TriggerPanel.tsx` |
 | RF06 Painel de alertas operacionais | Central de incidentes | Implementado — `pages/alerts/AlertsPage.tsx` |
 | RF07 Dashboard de desempenho por transportadora | Relatórios comparativos de qualidade de entrega por transportadora e região | Não implementado nesta entrega — desenhado no protótipo, item desabilitado na navegação |
 | RF09 Exportação e filtros analíticos | Filtro de relatórios por período, status, região e transportadora | Não implementado nesta entrega — depende do RF07 |
-| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `domain/permissions.ts` aplicada nas telas e na API (`authorize` → 403); tenant lido do token JWT em `backend/src/http/authMiddleware.ts` |
+| RF10 Multi-tenant e permissões | Isolamento de dados por empresa cliente e usuários com papéis distintos | Implementado — `domain/permissions.ts` aplicada nas telas e na API (`authorize` → 403); tenant lido do token JWT no `authMiddleware` da API |
 
 ### RF01 — identificação automática da transportadora
 
@@ -741,10 +753,10 @@ Registrado aqui porque delimitar o escopo faz parte da entrega.
 
 - **Banco de dados, fila de mensagens, cache e worker** (RNF02, RNF03 e RNF04) — a API já
   existe; falta trocar os repositórios em memória por PostgreSQL (novas classes que
-  implementam `backend/src/repositories/ports.ts`) e mover a consulta às transportadoras para
+  implementam `src/repositories/ports.ts` da API) e mover a consulta às transportadoras para
   um worker assíncrono.
 - **Tela de Desempenho por transportadora** (RF07 e RF09). Já está desenhada no protótipo,
   com gráficos comparativos, filtros por período e região, e exportação. Aparece desabilitada
   na navegação, marcada como próxima entrega.
 - **Integração real com APIs de transportadoras.**
-- **Testes automatizados no frontend.** A API já tem testes (`npm run test:api`).
+- **Testes automatizados no frontend.** A API já tem testes (`npm test` no repositório dela).

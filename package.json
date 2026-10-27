@@ -3,17 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "UNIRASTRO — painel SaaS de rastreamento proativo de encomendas (frontend + API em backend/)",
+  "description": "UNIRASTRO — painel SaaS de rastreamento proativo de encomendas (frontend; API em Mateushartelt/unirastro-api)",
   "scripts": {
     "dev": "vite",
-    "dev:api": "npm --prefix backend run dev",
-    "dev:all": "npm --prefix backend run dev & VITE_API_URL=/api vite",
+    "dev:api": "VITE_API_URL=/api vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "arch": "node scripts/check-architecture.mjs",
-    "test:api": "npm --prefix backend test"
+    "arch": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",
