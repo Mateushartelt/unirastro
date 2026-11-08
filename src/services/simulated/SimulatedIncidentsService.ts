@@ -12,7 +12,7 @@
 import type { AnomalyDetector } from '../../domain/anomalies/AnomalyDetector';
 import { compareIncidents, incidentsFromOrder } from '../../domain/incidents/incidents';
 import type { NotificationPolicy } from '../../domain/incidents/NotificationPolicy';
-import type { ApiResponse, Incident, TenantId } from '../../types';
+import type { ApiResponse, Incident } from '../../types';
 import type { IIncidentsService } from '../contracts';
 import type {
   IIncidentResolutionRepository,
@@ -39,7 +39,7 @@ export class SimulatedIncidentsService implements IIncidentsService {
     this.deps = deps;
   }
 
-  async list(tenantId: TenantId): Promise<ApiResponse<Incident[]>> {
+  async list(tenantId: string): Promise<ApiResponse<Incident[]>> {
     const { orders, systemIncidents, resolutions, triggers, anomalies, notifications } = this.deps;
 
     const now = new Date();
@@ -61,12 +61,12 @@ export class SimulatedIncidentsService implements IIncidentsService {
     return this.deps.network.ok([...derived, ...system].sort(compareIncidents));
   }
 
-  async resolve(tenantId: TenantId, id: string): Promise<ApiResponse<null>> {
+  async resolve(tenantId: string, id: string): Promise<ApiResponse<null>> {
     this.deps.resolutions.markResolved(tenantId, id);
     return this.deps.network.ok(null, 'Incidente marcado como resolvido');
   }
 
-  async reopen(tenantId: TenantId, id: string): Promise<ApiResponse<null>> {
+  async reopen(tenantId: string, id: string): Promise<ApiResponse<null>> {
     this.deps.resolutions.reopen(tenantId, id);
     return this.deps.network.ok(null, 'Incidente reaberto');
   }

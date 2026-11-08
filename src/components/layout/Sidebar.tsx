@@ -10,7 +10,7 @@ interface SidebarProps {
   queueSize: number;
 }
 
-export function Sidebar({ openIncidents, lastSyncAt, queueSize }: SidebarProps) {
+export function Sidebar({ openIncidents, lastSyncAt, queueSize }: Readonly<SidebarProps>) {
   const { session, signOut } = useAuth();
 
   if (!session) return null;

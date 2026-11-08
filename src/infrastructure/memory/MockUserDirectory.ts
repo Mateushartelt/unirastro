@@ -9,7 +9,7 @@
 
 import type { DemoAccount, IDemoAccounts } from '../../services/contracts';
 import type { IUserDirectory } from '../../services/simulated/ports';
-import type { Tenant, TenantId, User } from '../../types';
+import type { Tenant, User } from '../../types';
 
 export class MockUserDirectory implements IUserDirectory, IDemoAccounts {
   private readonly users: readonly User[];
@@ -25,11 +25,11 @@ export class MockUserDirectory implements IUserDirectory, IDemoAccounts {
     return this.users.find((u) => u.email.toLowerCase() === normalized) ?? null;
   }
 
-  exists(userId: string, tenantId: TenantId): boolean {
+  exists(userId: string, tenantId: string): boolean {
     return this.users.some((u) => u.id === userId && u.tenantId === tenantId);
   }
 
-  findTenant(tenantId: TenantId): Tenant | null {
+  findTenant(tenantId: string): Tenant | null {
     return this.tenants.find((t) => t.id === tenantId) ?? null;
   }
 

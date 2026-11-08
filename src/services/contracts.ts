@@ -22,7 +22,6 @@ import type {
   OrderWithAnomalies,
   Role,
   Session,
-  TenantId,
 } from '../types';
 
 export interface IAuthService {
@@ -48,17 +47,17 @@ export interface IDemoAccounts {
 }
 
 export interface IOrdersService {
-  list(tenantId: TenantId): Promise<ApiResponse<OrderWithAnomalies[]>>;
-  get(tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>>;
-  create(tenantId: TenantId, input: NewOrderInput): Promise<ApiResponse<OrderWithAnomalies>>;
+  list(tenantId: string): Promise<ApiResponse<OrderWithAnomalies[]>>;
+  get(tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>>;
+  create(tenantId: string, input: NewOrderInput): Promise<ApiResponse<OrderWithAnomalies>>;
   /** Consulta de status sob demanda (RF02). */
-  refresh(tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>>;
+  refresh(tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>>;
 }
 
 export interface IIncidentsService {
-  list(tenantId: TenantId): Promise<ApiResponse<Incident[]>>;
-  resolve(tenantId: TenantId, id: string): Promise<ApiResponse<null>>;
-  reopen(tenantId: TenantId, id: string): Promise<ApiResponse<null>>;
+  list(tenantId: string): Promise<ApiResponse<Incident[]>>;
+  resolve(tenantId: string, id: string): Promise<ApiResponse<null>>;
+  reopen(tenantId: string, id: string): Promise<ApiResponse<null>>;
 }
 
 export interface ITriggersService {

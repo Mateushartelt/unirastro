@@ -42,8 +42,13 @@ export class SimulatedNetwork {
 
   private wait(): Promise<void> {
     const { minMs, maxMs } = this.latency;
-    const ms = minMs + Math.random() * (maxMs - minMs);
+    const ms = minMs + randomFraction() * (maxMs - minMs);
     if (ms <= 0) return Promise.resolve();
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+}
+
+/** Numero em [0, 1) para sortear a latencia. Usa a API de criptografia do navegador. */
+function randomFraction(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 }

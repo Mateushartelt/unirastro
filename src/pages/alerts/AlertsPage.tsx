@@ -1,21 +1,16 @@
 import { useMemo, useState } from 'react';
-import { IncidentCard } from '../../components/alerts/IncidentCard';
+import { IncidentList } from '../../components/alerts/IncidentList';
+import { SeverityChips } from '../../components/alerts/SeverityChips';
+import { filterBySeverity, type SeverityFilter } from '../../components/alerts/severityFilters';
 import { TriggerPanel } from '../../components/alerts/TriggerPanel';
-import { Chip } from '../../components/ui/Chip';
-import { EmptyState, ErrorState, LoadingState } from '../../components/ui/Feedback';
+import { AsyncContent } from '../../components/ui/AsyncContent';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useServices } from '../../composition/servicesContext';
 import { useAuth, useSession } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
-import { useToast } from '../../contexts/ToastContext';
 import { useServiceQuery } from '../../hooks/useServiceQuery';
-import { responseMessage } from '../../services/response';
-import type { ApiResponse, Incident, NotificationTrigger, Severity } from '../../types';
+import type { Incident, NotificationTrigger } from '../../types';
 import styles from './AlertsPage.module.css';
-
-const SEVERITY_FILTERS = ['Todos', 'Crítico', 'Atenção', 'Info'] as const;
-
-type SeverityFilter = (typeof SEVERITY_FILTERS)[number];
+import { useAlertActions } from './useAlertActions';
 
 const NO_INCIDENTS: Incident[] = [];
 const NO_TRIGGERS: NotificationTrigger[] = [];
@@ -32,9 +27,8 @@ const NO_TRIGGERS: NotificationTrigger[] = [];
 export function AlertsPage() {
   const session = useSession();
   const { can } = useAuth();
-  const { showToast } = useToast();
-  const { invalidate } = useData();
   const { incidents: incidentsService, triggers: triggersService } = useServices();
+  const actions = useAlertActions();
 
   const incidentsQuery = useServiceQuery(
     () => incidentsService.list(session.tenantId),
@@ -42,33 +36,11 @@ export function AlertsPage() {
     NO_INCIDENTS,
   );
   const triggersQuery = useServiceQuery(() => triggersService.list(), 'triggers', NO_TRIGGERS);
-
   const incidents = incidentsQuery.data;
-  const triggers = triggersQuery.data;
-  const loading = incidentsQuery.loading;
-  const loadError = incidentsQuery.error;
 
   const [filter, setFilter] = useState<SeverityFilter>('Todos');
-
-  const visible = useMemo(
-    () => incidents.filter((i) => filter === 'Todos' || i.severity === (filter as Severity)),
-    [incidents, filter],
-  );
-
+  const visible = useMemo(() => filterBySeverity(incidents, filter), [incidents, filter]);
   const openCount = incidents.filter((i) => !i.resolved).length;
-
-  /** Toda acao da tela segue o mesmo roteiro: chama o servico, avisa e, se deu certo, recarrega. */
-  async function run(action: Promise<ApiResponse<unknown>>) {
-    const response = await action;
-    showToast(responseMessage(response));
-    // Recarrega tudo que observa o DataContext: a contagem da barra lateral e, no caso dos
-    // gatilhos, os incidentes, porque o gatilho decide se cada um aparece como notificado.
-    if (response.success) invalidate();
-  }
-
-  const handleResolve = (id: string) => run(incidentsService.resolve(session.tenantId, id));
-  const handleReopen = (id: string) => run(incidentsService.reopen(session.tenantId, id));
-  const handleToggle = (id: string) => run(triggersService.toggle(id));
 
   return (
     <>
@@ -76,59 +48,38 @@ export function AlertsPage() {
 
       <div className={styles.layout}>
         <section>
-          <div className={styles.chips}>
-            {SEVERITY_FILTERS.map((f) => (
-              <Chip
-                key={f}
-                label={f}
-                active={filter === f}
-                onClick={() => setFilter(f)}
-                count={
-                  f === 'Todos'
-                    ? incidents.length
-                    : incidents.filter((i) => i.severity === f).length
-                }
-              />
-            ))}
-          </div>
+          <SeverityChips
+            className={styles.chips}
+            incidents={incidents}
+            active={filter}
+            onChange={setFilter}
+          />
 
-          {loadError ? (
-            <ErrorState message={loadError} />
-          ) : loading ? (
-            <LoadingState message="Analisando encomendas…" />
-          ) : visible.length === 0 ? (
-            <EmptyState
-              message={
-                incidents.length === 0
-                  ? 'Nenhum incidente detectado. Todas as encomendas seguem dentro do previsto.'
-                  : 'Nenhum incidente com essa severidade.'
-              }
+          <AsyncContent
+            loading={incidentsQuery.loading}
+            error={incidentsQuery.error}
+            loadingMessage="Analisando encomendas…"
+          >
+            <IncidentList
+              className={styles.list}
+              incidents={visible}
+              totalCount={incidents.length}
+              canResolve={can.resolveIncidents}
+              onResolve={actions.resolve}
+              onReopen={actions.reopen}
             />
-          ) : (
-            <>
-              <div className={styles.list}>
-                {visible.map((incident) => (
-                  <IncidentCard
-                    key={incident.id}
-                    incident={incident}
-                    canResolve={can.resolveIncidents}
-                    onResolve={handleResolve}
-                    onReopen={handleReopen}
-                  />
-                ))}
-              </div>
-
+            {visible.length > 0 && (
               <p className={styles.summary}>
                 {openCount} em aberto de {incidents.length} incidentes · {session.tenantName}
               </p>
-            </>
-          )}
+            )}
+          </AsyncContent>
         </section>
 
         <TriggerPanel
-          triggers={triggers}
+          triggers={triggersQuery.data}
           canEdit={can.editTriggers}
-          onToggle={handleToggle}
+          onToggle={actions.toggleTrigger}
         />
       </div>
     </>

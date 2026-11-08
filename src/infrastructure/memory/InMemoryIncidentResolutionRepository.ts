@@ -6,10 +6,9 @@
  */
 
 import type { IIncidentResolutionRepository } from '../../services/simulated/ports';
-import type { TenantId } from '../../types';
 
 export interface ResolvedIncidentSeed {
-  tenantId: TenantId;
+  tenantId: string;
   id: string;
 }
 
@@ -20,19 +19,19 @@ export class InMemoryIncidentResolutionRepository implements IIncidentResolution
     seed.forEach(({ tenantId, id }) => this.resolved.add(key(tenantId, id)));
   }
 
-  isResolved(tenantId: TenantId, id: string): boolean {
+  isResolved(tenantId: string, id: string): boolean {
     return this.resolved.has(key(tenantId, id));
   }
 
-  markResolved(tenantId: TenantId, id: string): void {
+  markResolved(tenantId: string, id: string): void {
     this.resolved.add(key(tenantId, id));
   }
 
-  reopen(tenantId: TenantId, id: string): void {
+  reopen(tenantId: string, id: string): void {
     this.resolved.delete(key(tenantId, id));
   }
 }
 
-function key(tenantId: TenantId, id: string): string {
+function key(tenantId: string, id: string): string {
   return `${tenantId}|${id}`;
 }

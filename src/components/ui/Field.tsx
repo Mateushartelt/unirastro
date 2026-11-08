@@ -16,7 +16,7 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
  * identificador unico — e sem risco de colisao quando o mesmo campo aparece duas vezes na
  * pagina.
  */
-export function Field({ label, footer, mono = false, className, ...rest }: FieldProps) {
+export function Field({ label, footer, mono = false, className, ...rest }: Readonly<FieldProps>) {
   const id = useId();
 
   return (

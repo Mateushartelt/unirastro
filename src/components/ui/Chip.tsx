@@ -14,7 +14,7 @@ interface ChipProps {
  * Usa `aria-pressed` porque isto e um interruptor de estado, nao um link. Um leitor de tela
  * precisa anunciar que o filtro esta aplicado, e nao apenas ler o rotulo.
  */
-export function Chip({ label, active, onClick, count }: ChipProps) {
+export function Chip({ label, active, onClick, count }: Readonly<ChipProps>) {
   return (
     <button
       type="button"

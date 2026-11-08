@@ -1,7 +1,7 @@
 /** Incidentes de infraestrutura em memoria (fatia `systemIncidents` do antigo store global). */
 
 import type { ISystemIncidentRepository } from '../../services/simulated/ports';
-import type { Incident, TenantId } from '../../types';
+import type { Incident } from '../../types';
 
 export class InMemorySystemIncidentRepository implements ISystemIncidentRepository {
   private readonly incidents: Incident[];
@@ -10,7 +10,7 @@ export class InMemorySystemIncidentRepository implements ISystemIncidentReposito
     this.incidents = structuredClone([...seed]);
   }
 
-  listByTenant(tenantId: TenantId): Incident[] {
+  listByTenant(tenantId: string): Incident[] {
     return this.incidents.filter((i) => i.tenantId === tenantId);
   }
 }

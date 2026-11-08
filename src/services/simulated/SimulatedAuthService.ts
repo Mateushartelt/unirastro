@@ -62,8 +62,14 @@ export class SimulatedAuthService implements IAuthService {
   }
 
   private toSession(user: User): Session {
-    const { password: _password, ...rest } = user;
     const tenant = this.users.findTenant(user.tenantId);
-    return { ...rest, tenantName: tenant?.name ?? 'Empresa' };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+      tenantName: tenant?.name ?? 'Empresa',
+    };
   }
 }

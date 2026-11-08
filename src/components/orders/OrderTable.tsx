@@ -17,7 +17,7 @@ interface OrderTableProps {
  * de tela precisa dessa relacao para anunciar "Status: Parado" em vez de ler seis valores
  * soltos. O resultado visual e o mesmo.
  */
-export function OrderTable({ orders, onSelect }: OrderTableProps) {
+export function OrderTable({ orders, onSelect }: Readonly<OrderTableProps>) {
   if (orders.length === 0) {
     return (
       <div className={styles.wrapper}>
@@ -40,57 +40,58 @@ export function OrderTable({ orders, onSelect }: OrderTableProps) {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => {
-            const delivered = order.status === 'Entregue';
-            const due = dueLabel(order.dueAt, delivered, order.timeline[0]?.at);
-            const lastEvent = order.timeline[0];
-
-            return (
-              <tr
-                key={order.code}
-                className={`${styles.row} ${order.hasAnomaly ? styles.anomaly : ''}`}
-                onClick={() => onSelect(order.code)}
-                // A linha inteira e clicavel, entao precisa ser alcancavel pelo teclado e
-                // responder a Enter como um botao responderia.
-                tabIndex={0}
-                role="button"
-                aria-label={`Abrir detalhe da encomenda ${order.code}`}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    onSelect(order.code);
-                  }
-                }}
-              >
-                <td>
-                  <span className={styles.codeCell}>
-                    {order.hasAnomaly && (
-                      <span
-                        className={styles.anomalyDot}
-                        title="Anomalia detectada"
-                        aria-label="Anomalia detectada"
-                      />
-                    )}
-                    <span className={styles.code}>{order.code}</span>
-                  </span>
-                </td>
-                <td className={styles.carrier}>{order.carrier}</td>
-                <td>
-                  <span className={styles.recipient}>{order.recipient}</span>
-                  <span className={styles.city}>{order.city}</span>
-                </td>
-                <td>
-                  <StatusBadge status={order.status} />
-                </td>
-                <td className={due.urgent ? styles.dueUrgent : styles.due}>{due.text}</td>
-                <td className={styles.lastMove}>
-                  {lastEvent ? relativeFromNow(lastEvent.at) : '—'}
-                </td>
-              </tr>
-            );
-          })}
+          {orders.map((order) => (
+            <OrderRow key={order.code} order={order} onSelect={onSelect} />
+          ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+interface OrderRowProps {
+  order: OrderWithAnomalies;
+  onSelect: (code: string) => void;
+}
+
+function OrderRow({ order, onSelect }: Readonly<OrderRowProps>) {
+  const lastEvent = order.timeline[0];
+  const due = dueLabel(order.dueAt, order.status === 'Entregue', lastEvent?.at);
+
+  return (
+    <tr
+      className={`${styles.row} ${order.hasAnomaly ? styles.anomaly : ''}`}
+      onClick={() => onSelect(order.code)}
+      // A linha inteira e clicavel, entao precisa ser alcancavel pelo teclado e responder a
+      // Enter como um botao responderia.
+      tabIndex={0}
+      role="button"
+      aria-label={`Abrir detalhe da encomenda ${order.code}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect(order.code);
+        }
+      }}
+    >
+      <td>
+        <span className={styles.codeCell}>
+          {order.hasAnomaly && (
+            <span className={styles.anomalyDot} title="Anomalia detectada" aria-label="Anomalia detectada" />
+          )}
+          <span className={styles.code}>{order.code}</span>
+        </span>
+      </td>
+      <td className={styles.carrier}>{order.carrier}</td>
+      <td>
+        <span className={styles.recipient}>{order.recipient}</span>
+        <span className={styles.city}>{order.city}</span>
+      </td>
+      <td>
+        <StatusBadge status={order.status} />
+      </td>
+      <td className={due.urgent ? styles.dueUrgent : styles.due}>{due.text}</td>
+      <td className={styles.lastMove}>{lastEvent ? relativeFromNow(lastEvent.at) : '—'}</td>
+    </tr>
   );
 }

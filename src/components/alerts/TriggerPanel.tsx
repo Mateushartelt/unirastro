@@ -15,7 +15,7 @@ interface TriggerPanelProps {
  * um incidente daquele tipo ja gerou aviso. Desligar "Rota desviada" faz os desvios passarem a
  * aparecer como nao notificados.
  */
-export function TriggerPanel({ triggers, canEdit, onToggle }: TriggerPanelProps) {
+export function TriggerPanel({ triggers, canEdit, onToggle }: Readonly<TriggerPanelProps>) {
   const activeCount = triggers.filter((t) => t.enabled).length;
 
   return (

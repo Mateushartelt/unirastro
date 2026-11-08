@@ -18,7 +18,7 @@ export function Button({
   className,
   type = 'button',
   ...rest
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   const classes = [styles.button, styles[variant], styles[size], className]
     .filter(Boolean)
     .join(' ');

@@ -6,7 +6,7 @@
  */
 
 import type { NewOrderInput } from '../../domain/orders/newOrder';
-import type { ApiResponse, OrderWithAnomalies, TenantId } from '../../types';
+import type { ApiResponse, OrderWithAnomalies } from '../../types';
 import type { IOrdersService } from '../contracts';
 import type { HttpClient } from './HttpClient';
 
@@ -17,19 +17,19 @@ export class HttpOrdersService implements IOrdersService {
     this.http = http;
   }
 
-  list(_tenantId: TenantId): Promise<ApiResponse<OrderWithAnomalies[]>> {
+  list(_tenantId: string): Promise<ApiResponse<OrderWithAnomalies[]>> {
     return this.http.get('/encomendas');
   }
 
-  get(_tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
+  get(_tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
     return this.http.get(`/encomendas/${encodeURIComponent(code)}`);
   }
 
-  create(_tenantId: TenantId, input: NewOrderInput): Promise<ApiResponse<OrderWithAnomalies>> {
+  create(_tenantId: string, input: NewOrderInput): Promise<ApiResponse<OrderWithAnomalies>> {
     return this.http.post('/encomendas', input);
   }
 
-  refresh(_tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
+  refresh(_tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
     return this.http.post(`/encomendas/${encodeURIComponent(code)}/consultar`);
   }
 }

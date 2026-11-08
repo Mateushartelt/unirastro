@@ -23,7 +23,7 @@ import {
   validateNewOrder,
   type NewOrderInput,
 } from '../../domain/orders/newOrder';
-import type { ApiResponse, Order, OrderWithAnomalies, TenantId } from '../../types';
+import type { ApiResponse, Order, OrderWithAnomalies } from '../../types';
 import type { IOrdersService } from '../contracts';
 import type { ICarrierTrackingGateway, IOrderRepository, IWorkerActivityRecorder } from './ports';
 import type { SimulatedNetwork } from './SimulatedNetwork';
@@ -44,12 +44,12 @@ export class SimulatedOrdersService implements IOrdersService {
     this.deps = deps;
   }
 
-  async list(tenantId: TenantId): Promise<ApiResponse<OrderWithAnomalies[]>> {
+  async list(tenantId: string): Promise<ApiResponse<OrderWithAnomalies[]>> {
     const orders = this.deps.orders.listByTenant(tenantId).map((o) => this.enrich(o));
     return this.deps.network.ok(orders);
   }
 
-  async get(tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
+  async get(tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
     const order = this.deps.orders.findByCode(tenantId, code);
     if (!order) return this.notFound(code);
     return this.deps.network.ok(this.enrich(order));
@@ -57,7 +57,7 @@ export class SimulatedOrdersService implements IOrdersService {
 
   /** Cadastro manual de encomenda (RF01). */
   async create(
-    tenantId: TenantId,
+    tenantId: string,
     input: NewOrderInput,
   ): Promise<ApiResponse<OrderWithAnomalies>> {
     const { orders, carriers, workers, network } = this.deps;
@@ -87,7 +87,7 @@ export class SimulatedOrdersService implements IOrdersService {
    * No sistema real quem faz isso e um worker, periodicamente e em segundo plano. O botao existe
    * para tornar visivel numa apresentacao um processo que normalmente ninguem ve.
    */
-  async refresh(tenantId: TenantId, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
+  async refresh(tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
     const { orders, tracking, workers, network } = this.deps;
 
     const order = orders.findByCode(tenantId, code);

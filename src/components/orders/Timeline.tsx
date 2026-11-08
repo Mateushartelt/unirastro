@@ -16,7 +16,7 @@ interface TimelineProps {
  * visivel em texto secundario: padronizar a leitura nao pode significar perder o que a
  * transportadora realmente respondeu, senao uma auditoria fica sem lastro.
  */
-export function Timeline({ events, highlightFirst }: TimelineProps) {
+export function Timeline({ events, highlightFirst }: Readonly<TimelineProps>) {
   return (
     <ol className={styles.timeline}>
       {events.map((event, index) => {
@@ -28,13 +28,7 @@ export function Timeline({ events, highlightFirst }: TimelineProps) {
             <div className={styles.rail}>
               <span
                 className={styles.dot}
-                style={{
-                  background: isFirst
-                    ? highlightFirst
-                      ? 'var(--orange)'
-                      : 'var(--navy)'
-                    : 'var(--grey-dot)',
-                }}
+                style={{ background: dotColor(isFirst, highlightFirst) }}
                 aria-hidden="true"
               />
               {!isLast && <span className={styles.line} aria-hidden="true" />}
@@ -54,4 +48,9 @@ export function Timeline({ events, highlightFirst }: TimelineProps) {
       })}
     </ol>
   );
+}
+
+function dotColor(isFirst: boolean, highlightFirst: boolean): string {
+  if (!isFirst) return 'var(--grey-dot)';
+  return highlightFirst ? 'var(--orange)' : 'var(--navy)';
 }

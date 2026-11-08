@@ -18,7 +18,7 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 
-export function DataProvider({ children }: { children: ReactNode }) {
+export function DataProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [version, setVersion] = useState(0);
 
   const invalidate = useCallback(() => setVersion((v) => v + 1), []);

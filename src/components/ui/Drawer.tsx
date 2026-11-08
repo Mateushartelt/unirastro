@@ -16,7 +16,7 @@ interface DrawerProps {
  * A gaveta foi a escolha do design em vez de uma pagina separada, e ela se justifica: o
  * operador consulta um pacote sem perder a lista filtrada que levou trabalho a montar.
  */
-export function Drawer({ open, onClose, label, children }: DrawerProps) {
+export function Drawer({ open, onClose, label, children }: Readonly<DrawerProps>) {
   useOverlay(open, onClose);
 
   if (!open) return null;

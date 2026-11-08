@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useServices } from '../../composition/servicesContext';
 import type { NewOrderInput } from '../../domain/orders/newOrder';
 import { Button } from '../ui/Button';
@@ -35,37 +35,24 @@ export function NewOrderModal({
   serverError,
   onClose,
   onSubmit,
-}: NewOrderModalProps) {
-  const [code, setCode] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [city, setCity] = useState('');
+}: Readonly<NewOrderModalProps>) {
+  const fields = useNewOrderFields();
 
-  const { carrierDetection } = useServices();
-  const detection = describeDetection(code, carrierDetection.detect(code));
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSubmit({ code, recipient, city });
-  }
-
-  // Limpa os campos ao fechar, para que a proxima abertura comece vazia.
-  function handleClose() {
-    setCode('');
-    setRecipient('');
-    setCity('');
-    onClose();
+    onSubmit(fields.values);
   }
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       title="Cadastrar pedido"
       description="Informe o código de rastreio — a transportadora é identificada automaticamente."
       onSubmit={handleSubmit}
       actions={
         <>
-          <Button variant="subtle" onClick={handleClose}>
+          <Button variant="subtle" onClick={onClose}>
             Cancelar
           </Button>
           <Button type="submit" disabled={submitting}>
@@ -74,50 +61,81 @@ export function NewOrderModal({
         </>
       }
     >
+      <NewOrderFields fields={fields} />
+      {serverError && (
+        <p className={styles.error} role="alert">
+          {serverError}
+        </p>
+      )}
+      <SupportedFormats />
+    </Modal>
+  );
+}
+
+function useNewOrderFields() {
+  const [code, setCode] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [city, setCity] = useState('');
+
+  return { values: { code, recipient, city }, setCode, setRecipient, setCity };
+}
+
+function NewOrderFields({ fields }: Readonly<{ fields: ReturnType<typeof useNewOrderFields> }>) {
+  const { code, recipient, city } = fields.values;
+
+  return (
+    <>
       <Field
         label="Código de rastreio"
         mono
         autoFocus
         placeholder="ex: NL123456789BR"
         value={code}
-        onChange={(e) => setCode(e.target.value.toUpperCase())}
-        footer={
-          <p className={`${styles.detect} ${DETECTION_TONE[detection.status]}`}>
-            <span className={styles.detectDot} aria-hidden="true" />
-            <span>{detection.message}</span>
-          </p>
-        }
+        onChange={(e) => fields.setCode(e.target.value.toUpperCase())}
+        footer={<DetectionHint code={code} />}
       />
-
       <div className={styles.pair}>
         <Field
           label="Destinatário"
           placeholder="Nome completo"
           value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
+          onChange={(e) => fields.setRecipient(e.target.value)}
         />
         <Field
           label="Cidade / UF"
           placeholder="São Paulo, SP"
           value={city}
-          onChange={(e) => setCity(e.target.value)}
+          onChange={(e) => fields.setCity(e.target.value)}
         />
       </div>
+    </>
+  );
+}
 
-      {serverError && (
-        <p className={styles.error} role="alert">
-          {serverError}
-        </p>
-      )}
+/** A transportadora aparece enquanto se digita (RF01). */
+function DetectionHint({ code }: Readonly<{ code: string }>) {
+  const { carrierDetection } = useServices();
+  const detection = describeDetection(code, carrierDetection.detect(code));
 
-      <details className={styles.formats}>
-        <summary className={styles.formatsSummary}>Formatos aceitos</summary>
-        <ul className={styles.formatsList}>
-          {carrierDetection.supportedFormats().map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
-      </details>
-    </Modal>
+  return (
+    <p className={`${styles.detect} ${DETECTION_TONE[detection.status]}`}>
+      <span className={styles.detectDot} aria-hidden="true" />
+      <span>{detection.message}</span>
+    </p>
+  );
+}
+
+function SupportedFormats() {
+  const { carrierDetection } = useServices();
+
+  return (
+    <details className={styles.formats}>
+      <summary className={styles.formatsSummary}>Formatos aceitos</summary>
+      <ul className={styles.formatsList}>
+        {carrierDetection.supportedFormats().map((f) => (
+          <li key={f}>{f}</li>
+        ))}
+      </ul>
+    </details>
   );
 }

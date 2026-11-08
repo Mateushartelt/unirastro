@@ -9,7 +9,7 @@ interface PageHeaderProps {
   action?: ReactNode;
 }
 
-export function PageHeader({ eyebrow, title, action }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, action }: Readonly<PageHeaderProps>) {
   return (
     <header className={styles.header}>
       <div>

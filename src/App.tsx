@@ -20,7 +20,7 @@ import { OrdersPage } from './pages/orders/OrdersPage';
  * Os servicos chegam prontos por props, montados em main.tsx pelo composition root. Num teste,
  * basta passar outro objeto AppServices (com dubles) para renderizar a aplicacao inteira.
  */
-export default function App({ services }: { services: AppServices }) {
+export default function App({ services }: Readonly<{ services: AppServices }>) {
   return (
     <ServicesProvider services={services}>
       <BrowserRouter>

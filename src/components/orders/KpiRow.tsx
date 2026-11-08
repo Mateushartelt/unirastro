@@ -15,7 +15,7 @@ interface Kpi {
  * viessem de outra fonte, um dia diriam coisas diferentes sobre os mesmos pacotes — e o
  * usuario acreditaria no numero grande, nao na tabela.
  */
-export function KpiRow({ orders }: { orders: OrderWithAnomalies[] }) {
+export function KpiRow({ orders }: Readonly<{ orders: OrderWithAnomalies[] }>) {
   const kpis: Kpi[] = [
     {
       label: 'Em trânsito',

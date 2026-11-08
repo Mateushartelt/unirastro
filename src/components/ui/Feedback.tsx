@@ -7,7 +7,7 @@ import styles from './Feedback.module.css';
  * costuma ser um filtro esquecido, e dizer qual das duas e poupa o usuario de procurar um
  * problema que nao existe.
  */
-export function EmptyState({ message }: { message: string }) {
+export function EmptyState({ message }: Readonly<{ message: string }>) {
   return <p className={styles.empty}>{message}</p>;
 }
 
@@ -17,7 +17,7 @@ export function EmptyState({ message }: { message: string }) {
  * Anunciado como `status` para que leitores de tela informem a espera. Sem isso a tela fica
  * silenciosa para quem nao ve a mudanca.
  */
-export function LoadingState({ message = 'Carregando…' }: { message?: string }) {
+export function LoadingState({ message = 'Carregando…' }: Readonly<{ message?: string }>) {
   return (
     <p className={styles.loading} role="status" aria-live="polite">
       {message}
@@ -26,7 +26,7 @@ export function LoadingState({ message = 'Carregando…' }: { message?: string }
 }
 
 /** Falha de carregamento, com a mensagem que veio do servico. */
-export function ErrorState({ message }: { message: string }) {
+export function ErrorState({ message }: Readonly<{ message: string }>) {
   return (
     <p className={styles.error} role="alert">
       {message}

@@ -12,7 +12,7 @@ interface IncidentCardProps {
   onReopen: (id: string) => void;
 }
 
-export function IncidentCard({ incident, canResolve, onResolve, onReopen }: IncidentCardProps) {
+export function IncidentCard({ incident, canResolve, onResolve, onReopen }: Readonly<IncidentCardProps>) {
   return (
     <article className={`${styles.card} ${incident.resolved ? styles.resolved : ''}`}>
       <SeverityDot severity={incident.severity} />
@@ -46,21 +46,30 @@ export function IncidentCard({ incident, canResolve, onResolve, onReopen }: Inci
         </p>
       </div>
 
-      {incident.resolved ? (
-        canResolve ? (
-          <Button size="sm" variant="subtle" onClick={() => onReopen(incident.id)}>
-            Reabrir
-          </Button>
-        ) : (
-          <span className={styles.resolvedTag}>Resolvido</span>
-        )
-      ) : (
-        canResolve && (
-          <Button size="sm" variant="outline" onClick={() => onResolve(incident.id)}>
-            Resolver
-          </Button>
-        )
-      )}
+      <IncidentAction
+        incident={incident}
+        canResolve={canResolve}
+        onResolve={onResolve}
+        onReopen={onReopen}
+      />
     </article>
+  );
+}
+
+/** Resolver, reabrir ou so a etiqueta de resolvido, conforme o estado e a permissao. */
+function IncidentAction({ incident, canResolve, onResolve, onReopen }: Readonly<IncidentCardProps>) {
+  if (incident.resolved && canResolve) {
+    return (
+      <Button size="sm" variant="subtle" onClick={() => onReopen(incident.id)}>
+        Reabrir
+      </Button>
+    );
+  }
+  if (incident.resolved) return <span className={styles.resolvedTag}>Resolvido</span>;
+  if (!canResolve) return null;
+  return (
+    <Button size="sm" variant="outline" onClick={() => onResolve(incident.id)}>
+      Resolver
+    </Button>
   );
 }

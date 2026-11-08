@@ -33,7 +33,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const { auth } = useServices();
 
   // Le a sessao guardada uma unica vez, na montagem. Sem isto a aplicacao pisca a tela de

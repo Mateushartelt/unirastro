@@ -104,49 +104,48 @@ async function createHttpServices(apiUrl: string): Promise<AppServices> {
   };
 }
 
+function createSimulatedRepositories() {
+  return {
+    orders: new InMemoryOrderRepository(MOCK_ORDERS),
+    triggers: new InMemoryTriggerRepository(MOCK_TRIGGERS),
+    systemIncidents: new InMemorySystemIncidentRepository(MOCK_SYSTEM_INCIDENTS),
+    resolutions: new InMemoryIncidentResolutionRepository(
+      MOCK_SYSTEM_INCIDENTS.filter((i) => i.resolved),
+    ),
+    workers: new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize: 128 }),
+    users: new MockUserDirectory(MOCK_USERS, MOCK_TENANTS),
+  };
+}
+
 /** Backend simulado em memoria, usado quando nao ha API configurada. */
 export function createSimulatedServices(latency: LatencyRange = DEFAULT_LATENCY): AppServices {
-  // Dominio
-  const anomalyDetector = new AnomalyDetector(ANOMALY_RULES);
-  const notificationPolicy = new NotificationPolicy(ANOMALY_RULES);
-  const carrierDetector = new CarrierDetector(CARRIER_PATTERNS);
-
-  // Infraestrutura (adaptadores das portas)
+  const anomalies = new AnomalyDetector(ANOMALY_RULES);
+  const carriers = new CarrierDetector(CARRIER_PATTERNS);
   const network = new SimulatedNetwork(latency);
-  const orderRepository = new InMemoryOrderRepository(MOCK_ORDERS);
-  const triggerRepository = new InMemoryTriggerRepository(MOCK_TRIGGERS);
-  const systemIncidentRepository = new InMemorySystemIncidentRepository(MOCK_SYSTEM_INCIDENTS);
-  const resolutionRepository = new InMemoryIncidentResolutionRepository(
-    MOCK_SYSTEM_INCIDENTS.filter((i) => i.resolved),
-  );
-  const workerMonitor = new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize: 128 });
-  const userDirectory = new MockUserDirectory(MOCK_USERS, MOCK_TENANTS);
-  const sessionStorage = new LocalStorageSessionStorage();
-  const carrierGateway = new SimulatedCarrierGateway();
+  const repos = createSimulatedRepositories();
 
-  // Servicos (implementacoes dos contratos)
   return {
-    auth: new SimulatedAuthService(userDirectory, sessionStorage, network),
-    demoAccounts: userDirectory,
+    auth: new SimulatedAuthService(repos.users, new LocalStorageSessionStorage(), network),
+    demoAccounts: repos.users,
     orders: new SimulatedOrdersService({
-      orders: orderRepository,
-      tracking: carrierGateway,
-      workers: workerMonitor,
-      anomalies: anomalyDetector,
-      carriers: carrierDetector,
+      orders: repos.orders,
+      tracking: new SimulatedCarrierGateway(),
+      workers: repos.workers,
+      anomalies,
+      carriers,
       network,
     }),
     incidents: new SimulatedIncidentsService({
-      orders: orderRepository,
-      systemIncidents: systemIncidentRepository,
-      resolutions: resolutionRepository,
-      triggers: triggerRepository,
-      anomalies: anomalyDetector,
-      notifications: notificationPolicy,
+      orders: repos.orders,
+      systemIncidents: repos.systemIncidents,
+      resolutions: repos.resolutions,
+      triggers: repos.triggers,
+      anomalies,
+      notifications: new NotificationPolicy(ANOMALY_RULES),
       network,
     }),
-    triggers: new SimulatedTriggersService(triggerRepository, network),
-    workerStatus: new SimulatedWorkerStatusService(workerMonitor, network),
-    carrierDetection: carrierDetector,
+    triggers: new SimulatedTriggersService(repos.triggers, network),
+    workerStatus: new SimulatedWorkerStatusService(repos.workers, network),
+    carrierDetection: carriers,
   };
 }

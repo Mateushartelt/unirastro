@@ -1,4 +1,4 @@
-import { useId, type FormEvent, type ReactNode } from 'react';
+import { useId, type SubmitEvent, type ReactNode } from 'react';
 import styles from './Modal.module.css';
 import { useOverlay } from './useOverlay';
 
@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   description?: string;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
   children: ReactNode;
   /** Botoes de acao, alinhados a direita no rodape. */
   actions: ReactNode;
@@ -28,7 +28,7 @@ export function Modal({
   onSubmit,
   children,
   actions,
-}: ModalProps) {
+}: Readonly<ModalProps>) {
   const titleId = useId();
   useOverlay(open, onClose);
 

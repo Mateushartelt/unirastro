@@ -16,7 +16,7 @@ const STATUS_CLASS: Record<OrderStatus, string> = {
   Postado: styles.posted,
 };
 
-export function StatusBadge({ status }: { status: OrderStatus }) {
+export function StatusBadge({ status }: Readonly<{ status: OrderStatus }>) {
   return <span className={`${styles.badge} ${STATUS_CLASS[status]}`}>{status}</span>;
 }
 
@@ -31,7 +31,7 @@ export function severityColor(severity: Severity): string {
   return SEVERITY_COLOR[severity];
 }
 
-export function SeverityDot({ severity }: { severity: Severity }) {
+export function SeverityDot({ severity }: Readonly<{ severity: Severity }>) {
   return (
     <span
       className={styles.dot}
