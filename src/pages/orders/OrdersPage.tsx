@@ -13,7 +13,7 @@ import { useAuth, useSession } from '../../contexts/AuthContext';
 import { useServiceQuery } from '../../hooks/useServiceQuery';
 import type { OrderWithAnomalies } from '../../types';
 import styles from './OrdersPage.module.css';
-import { useNewOrderForm, useOrderRefresh } from './useOrderActions';
+import { useNewOrderForm, useOrderRefresh, useOrderRemoval } from './useOrderActions';
 import { useSelectedOrder } from './useSelectedOrder';
 
 const NO_ORDERS: OrderWithAnomalies[] = [];
@@ -41,6 +41,7 @@ export function OrdersPage() {
 
   const drawer = useSelectedOrder(orders);
   const { refreshing, refresh } = useOrderRefresh(drawer.selectedCode);
+  const removal = useOrderRemoval(drawer.selectedCode, () => drawer.select(null));
   const form = useNewOrderForm(() => {
     setFilter('Todas');
     setQuery('');
@@ -77,6 +78,8 @@ export function OrdersPage() {
         refreshing={refreshing}
         onClose={() => drawer.select(null)}
         onRefresh={refresh}
+        onDelete={can.deleteOrders ? removal.remove : undefined}
+        deleting={removal.deleting}
       />
 
       <NewOrderModal

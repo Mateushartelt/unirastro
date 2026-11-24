@@ -1,3 +1,5 @@
+import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { dueLabel } from '../../lib/format';
 import type { Anomaly, OrderWithAnomalies } from '../../types';
 import { Button } from '../ui/Button';
@@ -13,6 +15,9 @@ interface OrderDrawerProps {
   refreshing: boolean;
   onClose: () => void;
   onRefresh: () => void;
+  /** Sem a funcao, o papel nao pode apagar e o botao nem aparece (RF10). */
+  onDelete?: () => void;
+  deleting: boolean;
 }
 
 /**
@@ -28,6 +33,8 @@ export function OrderDrawer({
   refreshing,
   onClose,
   onRefresh,
+  onDelete,
+  deleting,
 }: Readonly<OrderDrawerProps>) {
   return (
     <Drawer
@@ -38,7 +45,12 @@ export function OrderDrawer({
       {loading || !order ? (
         <LoadingState message="Consultando encomenda…" />
       ) : (
-        <OrderDetail order={order} refreshing={refreshing} onRefresh={onRefresh} />
+        <>
+          <OrderDetail order={order} refreshing={refreshing} onRefresh={onRefresh} />
+          {onDelete && (
+            <DeleteOrder key={order.code} code={order.code} deleting={deleting} onConfirm={onDelete} />
+          )}
+        </>
       )}
     </Drawer>
   );
@@ -113,5 +125,47 @@ function AnomalyList({ anomalies }: Readonly<{ anomalies: Anomaly[] }>) {
         </article>
       ))}
     </section>
+  );
+}
+
+interface DeleteOrderProps {
+  code: string;
+  deleting: boolean;
+  onConfirm: () => void;
+}
+
+/**
+ * Apagar pede confirmacao no proprio painel: um clique so mostra o aviso, o segundo apaga.
+ * Nao ha desfazer, entao o aviso diz o que se perde.
+ */
+function DeleteOrder({ code, deleting, onConfirm }: Readonly<DeleteOrderProps>) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <div className={styles.delete}>
+        <Button size="sm" variant="danger" onClick={() => setConfirming(true)}>
+          <Trash2 size={14} aria-hidden="true" />
+          Apagar encomenda
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${styles.delete} ${styles.deleteConfirm}`} role="alertdialog" aria-label="Confirmar exclusão">
+      <p className={styles.deleteText}>
+        Apagar <strong>{code}</strong>? O rastreio para e o histórico some. Não dá para desfazer.
+      </p>
+      <div className={styles.deleteActions}>
+        <Button size="sm" variant="subtle" onClick={() => setConfirming(false)} disabled={deleting}>
+          Cancelar
+        </Button>
+        <Button size="sm" variant="danger" onClick={onConfirm} disabled={deleting} autoFocus>
+          <Trash2 size={14} aria-hidden="true" />
+          {deleting ? 'Apagando…' : 'Apagar'}
+        </Button>
+      </div>
+    </div>
   );
 }

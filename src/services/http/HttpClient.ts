@@ -46,6 +46,10 @@ export class HttpClient {
     return this.request<T>('PATCH', path, body);
   }
 
+  delete<T>(path: string): Promise<ApiResponse<T>> {
+    return this.request<T>('DELETE', path);
+  }
+
   private async request<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
     const token = this.credentials.load()?.token;
 

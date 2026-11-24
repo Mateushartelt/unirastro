@@ -114,6 +114,11 @@ export class SimulatedOrdersService implements IOrdersService {
     return network.ok(this.enrich(updated), `Movimentação nova: ${update.event.title}`);
   }
 
+  async remove(tenantId: string, code: string): Promise<ApiResponse<{ code: string }>> {
+    if (!this.deps.orders.remove(tenantId, code)) return this.notFound(code);
+    return this.deps.network.ok({ code }, `Encomenda ${code} apagada.`);
+  }
+
   /** Acrescenta a cada encomenda o que as regras de dominio derivaram dela. */
   private enrich(order: Order): OrderWithAnomalies {
     const anomalies = this.deps.anomalies.detect(order);

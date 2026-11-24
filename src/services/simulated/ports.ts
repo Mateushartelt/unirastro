@@ -17,6 +17,8 @@ export interface IOrderRepository {
   findByCode(tenantId: string, code: string): Order | null;
   add(order: Order): void;
   update(order: Order): void;
+  /** Apaga a encomenda da empresa. Devolve false quando ela nao existia. */
+  remove(tenantId: string, code: string): boolean;
 }
 
 export interface ITriggerRepository {

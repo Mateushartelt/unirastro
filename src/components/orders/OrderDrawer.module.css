@@ -127,3 +127,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Apagar encomenda --- */
+
+.delete {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+
+.deleteConfirm {
+  padding: 14px;
+  border: 1px solid var(--red);
+  background: var(--surface);
+}
+
+.deleteText {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--body);
+}
+
+.deleteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
