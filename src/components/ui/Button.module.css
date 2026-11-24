@@ -61,3 +61,14 @@
 .subtle:hover:not(:disabled) {
   border-color: var(--ink);
 }
+
+.danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--red);
+  color: var(--surface);
+}

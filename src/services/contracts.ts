@@ -52,6 +52,8 @@ export interface IOrdersService {
   create(tenantId: string, input: NewOrderInput): Promise<ApiResponse<OrderWithAnomalies>>;
   /** Consulta de status sob demanda (RF02). */
   refresh(tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>>;
+  /** Para de rastrear e tira a encomenda da lista. */
+  remove(tenantId: string, code: string): Promise<ApiResponse<{ code: string }>>;
 }
 
 export interface IIncidentsService {

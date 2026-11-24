@@ -28,6 +28,30 @@ export function useOrderRefresh(code: string | null) {
   return { refreshing, refresh };
 }
 
+/** Apaga a encomenda aberta na gaveta e fecha a gaveta quando der certo. */
+export function useOrderRemoval(code: string | null, onRemoved: () => void) {
+  const session = useSession();
+  const { showToast } = useToast();
+  const { invalidate } = useData();
+  const { orders } = useServices();
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    if (!code) return;
+
+    setDeleting(true);
+    const response = await orders.remove(session.tenantId, code);
+    setDeleting(false);
+
+    showToast(responseMessage(response));
+    if (!response.success) return;
+    onRemoved();
+    invalidate();
+  }
+
+  return { deleting, remove };
+}
+
 /** Estado do modal de cadastro (RF01): aberto, enviando e o erro devolvido pelo servidor. */
 export function useNewOrderForm(onCreated: () => void) {
   const session = useSession();

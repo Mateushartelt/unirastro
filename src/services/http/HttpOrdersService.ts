@@ -32,4 +32,8 @@ export class HttpOrdersService implements IOrdersService {
   refresh(_tenantId: string, code: string): Promise<ApiResponse<OrderWithAnomalies>> {
     return this.http.post(`/encomendas/${encodeURIComponent(code)}/consultar`);
   }
+
+  remove(_tenantId: string, code: string): Promise<ApiResponse<{ code: string }>> {
+    return this.http.delete(`/encomendas/${encodeURIComponent(code)}`);
+  }
 }
