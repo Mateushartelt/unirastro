@@ -89,7 +89,7 @@ function NewOrderFields({ fields }: Readonly<{ fields: ReturnType<typeof useNewO
         label="Código de rastreio"
         mono
         autoFocus
-        placeholder="ex: NL123456789BR"
+        placeholder="ex: BR123456789012A"
         labelAddon={<SupportedCarriers />}
         value={code}
         onChange={(e) => fields.setCode(e.target.value.toUpperCase())}
