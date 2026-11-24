@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { relativeFromNow } from '../../lib/format';
+import { History } from 'lucide-react';
+import { eventDateTime, relativeFromNow } from '../../lib/format';
 import type { Incident } from '../../types';
 import { Button } from '../ui/Button';
 import { SeverityDot, severityColor } from '../ui/StatusBadge';
@@ -14,7 +15,11 @@ interface IncidentCardProps {
 
 export function IncidentCard({ incident, canResolve, onResolve, onReopen }: Readonly<IncidentCardProps>) {
   return (
-    <article className={`${styles.card} ${incident.resolved ? styles.resolved : ''}`}>
+    // O historico fica em destaque normal: e o que se quer mostrar. So o resolvido de verdade
+    // fica apagado.
+    <article
+      className={`${styles.card} ${incident.resolved && !incident.historical ? styles.resolved : ''}`}
+    >
       <SeverityDot severity={incident.severity} />
 
       <div className={styles.body}>
@@ -39,9 +44,15 @@ export function IncidentCard({ incident, canResolve, onResolve, onReopen }: Read
             <span className={styles.code}>—</span>
           )}
           <span>{incident.carrier}</span>
-          <span>{relativeFromNow(incident.detectedAt)}</span>
+          {incident.historical ? (
+            <span>teria disparado em {eventDateTime(incident.detectedAt)}</span>
+          ) : (
+            <span>{relativeFromNow(incident.detectedAt)}</span>
+          )}
           {incident.notified && (
-            <span className={styles.notified}>✓ Cliente final notificado</span>
+            <span className={styles.notified}>
+              {incident.historical ? '✓ Cliente final seria avisado' : '✓ Cliente final notificado'}
+            </span>
           )}
         </p>
       </div>
@@ -58,6 +69,14 @@ export function IncidentCard({ incident, canResolve, onResolve, onReopen }: Read
 
 /** Resolver, reabrir ou so a etiqueta de resolvido, conforme o estado e a permissao. */
 function IncidentAction({ incident, canResolve, onResolve, onReopen }: Readonly<IncidentCardProps>) {
+  if (incident.historical) {
+    return (
+      <span className={styles.historicalTag} title="Reconstruído do histórico da encomenda">
+        <History size={13} aria-hidden="true" />
+        Histórico
+      </span>
+    );
+  }
   if (incident.resolved && canResolve) {
     return (
       <Button size="sm" variant="subtle" onClick={() => onReopen(incident.id)}>

@@ -120,6 +120,8 @@ export interface Incident extends Anomaly {
   /** Se o cliente final ja recebeu o aviso proativo. */
   notified: boolean;
   resolved: boolean;
+  /** Incidente reconstruido do historico da encomenda: ja encerrado, sem acao a tomar. */
+  historical?: boolean;
 }
 
 /* ------------------------------------------------------------------ *

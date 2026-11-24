@@ -72,6 +72,18 @@
   font-weight: 500;
 }
 
+.historicalTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .resolvedTag {
   font-size: 12px;
   font-weight: 600;
