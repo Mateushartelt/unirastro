@@ -3,6 +3,7 @@ import { useServices } from '../../composition/servicesContext';
 import type { NewOrderInput } from '../../domain/orders/newOrder';
 import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
+import { InfoTooltip } from '../ui/InfoTooltip';
 import { Modal } from '../ui/Modal';
 import { describeDetection } from './carrierFeedback';
 import styles from './NewOrderModal.module.css';
@@ -67,7 +68,6 @@ export function NewOrderModal({
           {serverError}
         </p>
       )}
-      <SupportedFormats />
     </Modal>
   );
 }
@@ -90,6 +90,7 @@ function NewOrderFields({ fields }: Readonly<{ fields: ReturnType<typeof useNewO
         mono
         autoFocus
         placeholder="ex: NL123456789BR"
+        labelAddon={<SupportedCarriers />}
         value={code}
         onChange={(e) => fields.setCode(e.target.value.toUpperCase())}
         footer={<DetectionHint code={code} />}
@@ -125,17 +126,25 @@ function DetectionHint({ code }: Readonly<{ code: string }>) {
   );
 }
 
-function SupportedFormats() {
+/** O "?" ao lado do rotulo: transportadoras aceitas e o formato do codigo de cada uma. */
+function SupportedCarriers() {
   const { carrierDetection } = useServices();
+  const formats = carrierDetection.supportedFormats().map((f) => {
+    const [carrier, ...hint] = f.split(': ');
+    return { carrier, hint: hint.join(': ') };
+  });
 
   return (
-    <details className={styles.formats}>
-      <summary className={styles.formatsSummary}>Formatos aceitos</summary>
-      <ul className={styles.formatsList}>
-        {carrierDetection.supportedFormats().map((f) => (
-          <li key={f}>{f}</li>
+    <InfoTooltip label="Transportadoras aceitas">
+      <strong className={styles.tooltipTitle}>Transportadoras aceitas</strong>
+      <span className={styles.tooltipList}>
+        {formats.map(({ carrier, hint }) => (
+          <span key={carrier} className={styles.tooltipItem}>
+            <span>{carrier}</span>
+            <code className={styles.tooltipHint}>{hint}</code>
+          </span>
         ))}
-      </ul>
-    </details>
+      </span>
+    </InfoTooltip>
   );
 }

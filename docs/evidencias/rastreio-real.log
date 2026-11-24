@@ -1,0 +1,18 @@
+# Rastreio real — Shopee Xpress, código BR262730058243Y, 23/11/2026
+# Log da API (npm run dev) durante o cadastro e a consulta pelo painel
+
+UNIRASTRO API em http://localhost:3333/api
+Transportadoras: rastreio real (Shopee Xpress + Melhor Rastreio)
+[Shopee Xpress] Shopee Xpress BR262730058243Y -> 3 evento(s) novo(s), status "Em trânsito", último: O pedido chegou ao centro de : São Bernardo do Campo - SP e segue para a próxima etapa. (431 ms)
+[Shopee Xpress] Shopee Xpress BR262730058243Y -> sem movimentação nova (205 ms)
+UNIRASTRO API em http://localhost:3333/api
+Transportadoras: rastreio real (Shopee Xpress + Melhor Rastreio)
+
+# npm run rastrear -- BR262730058243Y
+BR262730058243Y -> Shopee Xpress. Consultando a transportadora...
+[Shopee Xpress] Shopee Xpress BR262730058243Y -> 3 evento(s) novo(s), status "Em trânsito", último: O pedido chegou ao centro de : São Bernardo do Campo - SP e segue para a próxima etapa. (325 ms)
+Status no UNIRASTRO: Em trânsito
+
+23/11/2026, 21:32:30  O pedido chegou ao centro de : São Bernardo do Campo - SP e segue para a próxima etapa.  (São Bernardo do Campo, SP)
+23/11/2026, 16:02:22  Seu pedido foi coletado  (Shopee Xpress)
+23/11/2026, 05:41:07  O seu pedido está sendo preparado para envio.  (Shopee Xpress)

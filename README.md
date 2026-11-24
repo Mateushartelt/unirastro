@@ -747,6 +747,17 @@ encomendas é uma tabela de verdade, e não uma grade de divisões, porque um le
 precisa da relação entre cabeçalho e célula para anunciar "Status: Parado" em vez de ler seis
 valores soltos.
 
+## Rastreio real
+
+Com a API real, os códigos cadastrados são consultados na transportadora de verdade: Shopee
+Xpress pela API pública dela, e Correios, Jadlog e Loggi pelo agregador Melhor Rastreio.
+Detalhes no README do [unirastro-api](https://github.com/Mateushartelt/unirastro-api).
+Evidência com uma encomenda real (Shopee Xpress, 23/11/2026):
+[`docs/evidencias/rastreio-real.log`](docs/evidencias/rastreio-real.log) e
+[`docs/evidencias/rastreio-real-shopee-xpress.jpg`](docs/evidencias/rastreio-real-shopee-xpress.jpg).
+
+![Linha do tempo real da Shopee Xpress no painel](docs/evidencias/rastreio-real-shopee-xpress.jpg)
+
 ## Próximas etapas
 
 Registrado aqui porque delimitar o escopo faz parte da entrega.
@@ -758,5 +769,5 @@ Registrado aqui porque delimitar o escopo faz parte da entrega.
 - **Tela de Desempenho por transportadora** (RF07 e RF09). Já está desenhada no protótipo,
   com gráficos comparativos, filtros por período e região, e exportação. Aparece desabilitada
   na navegação, marcada como próxima entrega.
-- **Integração real com APIs de transportadoras.**
+- **API oficial dos Correios** no lugar do agregador (exige contrato com os Correios).
 - **Testes automatizados no frontend.** A API já tem testes (`npm test` no repositório dela).
