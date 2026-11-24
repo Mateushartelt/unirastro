@@ -3,9 +3,15 @@
   min-width: 0;
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
 .label {
   display: block;
-  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);

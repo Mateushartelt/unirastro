@@ -49,27 +49,30 @@
   color: var(--red);
 }
 
-/* --- Ajuda de formatos --- */
+/* --- Tooltip de transportadoras aceitas --- */
 
-.formats {
-  margin-top: 16px;
-  font-size: 12px;
-  color: var(--muted);
+.tooltipTitle {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
-.formatsSummary {
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.formatsList {
-  margin: 8px 0 0;
-  padding-left: 18px;
+.tooltipList {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+}
+
+.tooltipItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tooltipHint {
   font-family: var(--font-mono);
   font-size: 11px;
+  color: var(--on-navy-dim);
 }
 
 @media (max-width: 480px) {
