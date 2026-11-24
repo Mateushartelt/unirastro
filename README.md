@@ -663,10 +663,13 @@ cinquenta vezes, e o código já carrega essa informação.
 
 | Transportadora | Formato |
 | --- | --- |
-| Correios | duas letras, nove dígitos, duas letras |
 | Jadlog | catorze dígitos |
 | Loggi | prefixo LG e dez dígitos |
 | Total Express | prefixo TE e doze dígitos |
+| Shopee Xpress | BR, doze dígitos e uma letra |
+
+Correios não são aceitos no cadastro: sem contrato com os Correios, nenhuma fonte gratuita
+devolveu o histórico de um código real (ver [Rastreio real](#rastreio-real)).
 
 São aproximações didáticas. Formatos reais mudam e se sobrepõem entre operadores. Em produção
 o palpite serviria apenas para escolher qual API consultar primeiro, e a confirmação viria da
@@ -750,7 +753,9 @@ valores soltos.
 ## Rastreio real
 
 Com a API real, os códigos cadastrados são consultados na transportadora de verdade: Shopee
-Xpress pela API pública dela, e Correios, Jadlog e Loggi pelo agregador Melhor Rastreio.
+Xpress pela API pública dela, e Jadlog e Loggi pelo agregador Melhor Rastreio (estes ainda sem
+teste com código real). Correios ficaram de fora do cadastro: o agregador não devolveu o
+histórico de um código real dos Correios, e a API oficial deles exige contrato.
 Detalhes no README do [unirastro-api](https://github.com/Mateushartelt/unirastro-api).
 Evidência com uma encomenda real (Shopee Xpress, 23/11/2026):
 [`docs/evidencias/rastreio-real.log`](docs/evidencias/rastreio-real.log) e
